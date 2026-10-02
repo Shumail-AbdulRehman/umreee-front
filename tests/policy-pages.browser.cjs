@@ -9,9 +9,12 @@ const assert = require('node:assert/strict')
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
     const errors = [], groupPages = new Set()
     const groups = Array.from({ length: 235 }, (_, i) => ({ _id: `g${i + 1}`, name: `Group ${String(i + 1).padStart(3, '0')}`, status: 'active' }))
-    const catalogs = ['dlp', 'guardrail'].map((kind) => ({ _id: `catalog-${kind}`, category: kind, status: 'active', version: 1,
-      scope: { group_ids: kind === 'dlp' ? ['g1'] : [] }, entry_count: 145,
-      entries: Array.from({ length: 145 }, (_, i) => ({ id: `${kind}-${i + 1}`, title: `${kind === 'dlp' ? 'DLP' : 'Guardrail'} check ${String(i + 1).padStart(3, '0')}`, categories: ['Security'] })) }))
+    const catalogs = ['dlp', 'guardrail'].map((kind) => {
+      const count = kind === 'dlp' ? 473 : 179
+      return { _id: `catalog-${kind}`, category: kind, status: 'active', version: 1,
+        scope: { group_ids: kind === 'dlp' ? ['g1'] : [] }, entry_count: count,
+        entries: Array.from({ length: count }, (_, i) => ({ id: `${kind}-${i + 1}`, title: `${kind === 'dlp' ? 'DLP' : 'Guardrail'} check ${String(i + 1).padStart(3, '0')}`, categories: ['Security'] })) }
+    })
     const sets = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.addInitScript(() => localStorage.setItem('centurion.auth.token', 'mock-only'))
@@ -47,18 +50,36 @@ const assert = require('node:assert/strict')
     })
     const dialog = page.getByRole('dialog')
     const noOverflow = async () => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+    const assertScrollableEditor = async () => {
+      const metrics = await dialog.evaluate((element) => {
+        const body = element.querySelector('.assignment-editor-body')
+        const footer = element.querySelector('.assignment-editor-footer')
+        return {
+          bodyScrollable: body.scrollHeight > body.clientHeight,
+          footerBottom: footer.getBoundingClientRect().bottom,
+          modalBottom: element.getBoundingClientRect().bottom,
+          viewportBottom: innerHeight,
+        }
+      })
+      assert.equal(metrics.bodyScrollable, true)
+      assert.ok(metrics.footerBottom <= metrics.modalBottom + 1, 'Save controls must stay inside the dialog')
+      assert.ok(metrics.footerBottom <= metrics.viewportBottom + 1, 'Save controls must stay on screen')
+    }
     await page.goto(`${base}/#dlp-policy`, { waitUntil: 'domcontentloaded' })
     await page.getByRole('heading', { name: 'DLP policies', exact: true }).waitFor()
     assert.deepEqual([...groupPages], [1, 2, 3])
+    await page.setViewportSize({ width: 1440, height: 700 })
     await page.getByRole('button', { name: 'Create DLP policy', exact: true }).first().click()
     await dialog.getByLabel('Policy name').fill('Customer data protection')
     await dialog.getByRole('radio', { name: /Choose specific checks/ }).check()
+    await assertScrollableEditor()
+    await page.screenshot({ path: '/tmp/policy-modal-dlp-scroll.png' })
     for (const n of ['001', '002', '003']) await dialog.getByRole('checkbox', { name: `Select DLP check ${n}`, exact: true }).check()
-    await dialog.getByLabel('Search checks').fill('145')
-    await dialog.getByRole('checkbox', { name: 'Select DLP check 145', exact: true }).check()
+    await dialog.getByLabel('Search checks').fill('473')
+    await dialog.getByRole('checkbox', { name: 'Select DLP check 473', exact: true }).check()
     await dialog.getByRole('button', { name: 'Create policy', exact: true }).click()
     await dialog.waitFor({ state: 'hidden' })
-    assert.deepEqual(sets[0].selected_entry_ids, ['dlp-1', 'dlp-2', 'dlp-3', 'dlp-145'])
+    assert.deepEqual(sets[0].selected_entry_ids, ['dlp-1', 'dlp-2', 'dlp-3', 'dlp-473'])
     assert.deepEqual(sets[0].scope.group_ids, [])
     await page.getByRole('button', { name: 'Assign groups', exact: true }).click()
     await dialog.getByRole('checkbox', { name: 'Assign to Group 002', exact: true }).check()
@@ -68,10 +89,10 @@ const assert = require('node:assert/strict')
     await dialog.waitFor({ state: 'hidden' })
     assert.deepEqual(sets[0].scope.group_ids, ['g2', 'g220'])
     await page.getByRole('button', { name: 'Edit checks', exact: true }).click()
-    await dialog.getByRole('radio', { name: /All 145 checks/ }).check()
+    await dialog.getByRole('radio', { name: /All 473 checks/ }).check()
     await dialog.getByRole('button', { name: 'Save policy', exact: true }).click()
     await dialog.waitFor({ state: 'hidden' })
-    assert.equal(sets[0].selected_entry_ids.length, 145)
+    assert.equal(sets[0].selected_entry_ids.length, 473)
     assert.deepEqual(sets[0].scope.group_ids, ['g2', 'g220'])
     await page.screenshot({ path: '/tmp/named-policy-desktop.png', fullPage: true })
     page.once('dialog', (event) => event.accept())
@@ -85,12 +106,17 @@ const assert = require('node:assert/strict')
     await page.screenshot({ path: '/tmp/named-policy-mobile.png', fullPage: true })
     await page.getByRole('button', { name: 'Assign groups', exact: true }).click(); await noOverflow()
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await page.setViewportSize({ width: 390, height: 640 })
     await page.goto(`${base}/#guardrail-policy`, { waitUntil: 'domcontentloaded' })
     await page.getByRole('button', { name: 'Create Guardrail policy', exact: true }).first().click()
     await dialog.getByLabel('Policy name').fill('Safe responses')
+    await dialog.getByRole('radio', { name: /Choose specific checks/ }).check()
+    await assertScrollableEditor()
+    await page.screenshot({ path: '/tmp/policy-modal-guardrail-scroll.png' })
+    for (const n of ['001', '002']) await dialog.getByRole('checkbox', { name: `Select Guardrail check ${n}`, exact: true }).check()
     await dialog.getByRole('button', { name: 'Create policy', exact: true }).click()
     await dialog.waitFor({ state: 'hidden' })
-    assert.equal(sets[1].selected_entry_ids.length, 145)
+    assert.equal(sets[1].selected_entry_ids.length, 2)
     assert.deepEqual(errors, [])
     console.log('PASS: named DLP and Guardrail policies; four or all checks; reusable group assignments; edits preserve assignments; reload; mobile width.')
   } finally { await browser.close() }
