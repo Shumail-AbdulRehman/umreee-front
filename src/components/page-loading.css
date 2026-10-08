@@ -1,0 +1,8 @@
+.page-loading-boundary { min-width:0; }
+.page-loading-content.is-pending { display:none; }
+.request-progress { position:fixed; top:0; right:0; left:0; z-index:150; pointer-events:none; }
+.request-progress .loading-progress { height:3px; border-radius:0; background:transparent; }
+.request-progress .loading-progress > span { width:34%; border-radius:0 100px 100px 0; }
+.request-progress-label { position:fixed; top:69px; right:24px; padding:7px 11px; border:1px solid #cbdaf5; border-radius:100px; background:#fff; box-shadow:0 5px 16px rgb(28 49 99 / 12%); color:#345bb4; font-size:11px; font-weight:700; }
+@media (max-width:600px) { .request-progress-label { top:auto; right:12px; bottom:16px; } }
+@media (prefers-reduced-motion:reduce) { .request-progress .loading-progress > span { animation:none; width:100%; } }

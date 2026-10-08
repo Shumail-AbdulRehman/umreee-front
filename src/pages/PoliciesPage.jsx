@@ -6,6 +6,7 @@ import PolicyGroupPicker from '../components/PolicyGroupPicker'
 import PolicyCheckPicker from '../components/PolicyCheckPicker'
 import { policyEntryId, policyEntryName } from '../utils/policyEntries'
 import Modal from '../components/Modal'
+import LoadingSurface, { InlineLoadingBar } from '../components/LoadingSurface'
 import './policies.css'
 
 const label = (kind) => kind === 'dlp' ? 'DLP' : 'Guardrail'
@@ -48,6 +49,7 @@ function PolicyEditor({ catalog, policy, onClose, onSaved }) {
             <span><strong>Choose specific checks</strong><small>Select only the checks this policy needs.</small></span></label></fieldset>
         {mode === 'custom' ? <PolicyCheckPicker entries={catalog.entries} selected={selected} onChange={setSelected} disabled={busy} /> :
           <div className="assignment-all-summary"><strong>All {all.length} current checks selected</strong><p>{catalog.entries.slice(0, 3).map(policyEntryName).join(' · ')}{all.length > 3 ? ` · and ${all.length - 3} more` : ''}</p></div>}
+        {busy && <InlineLoadingBar label="Saving policy…" />}
         {error && <p className="admin-error" role="alert">{error}</p>}
       </div>
       <div className="assignment-editor-footer"><span>{checks.length} of {all.length} checks · No groups changed</span><div className="assignment-footer-actions">
@@ -76,6 +78,7 @@ function GroupEditor({ policy, groups, onClose, onSaved }) {
   return <Modal title={`Assign ${policy.name} to groups`} wide dirty={dirty && !busy} onClose={onClose}>
     <div className="assignment-editor-body"><p className="policy-editor-intro">Every selected group receives the same {policy.selected_entry_ids.length} checks. You can reuse this policy across groups without creating a copy.</p>
       <PolicyGroupPicker groups={groups} selected={selected} onChange={setSelected} disabled={busy} />
+      {busy && <InlineLoadingBar label="Saving group assignments…" />}
       {error && <p role="alert" className="admin-error">{error}</p>}</div>
     <div className="assignment-editor-footer"><span>{selected.length} groups selected</span><div className="assignment-footer-actions">
       <button type="button" className="btn" disabled={busy} onClick={close}>Cancel</button>
@@ -93,6 +96,8 @@ function PolicyWorkspace({ catalog, policies, groups, onSaved, onCatalogSaved, f
   const kind = label(catalog.category)
   const active = policies.filter((policy) => policy.status !== 'archived')
   const visible = active.filter((policy) => `${policy.name} ${policy.description || ''}`.toLowerCase().includes(search.trim().toLowerCase()))
+  const assignedPolicies = active.filter((policy) => policy.status === 'active' && policy.scope.group_ids.length)
+  const coveredGroups = new Set(assignedPolicies.flatMap((policy) => policy.scope.group_ids)).size
   const selectedGroup = groups.find((group) => group._id === filterGroupId)
   const oldGroupIds = catalog.scope?.group_ids || []
   function saved(policy, text) { onSaved(policy); setEditor(null); setMessage(text); setError('') }
@@ -121,23 +126,23 @@ function PolicyWorkspace({ catalog, policies, groups, onSaved, onCatalogSaved, f
   return <div className={`policy-overview policy-${catalog.category}`}>
     <header className="policy-intro"><div className="policy-intro-copy"><div className="policy-symbol" aria-hidden="true">{catalog.category === 'dlp' ? '◈' : '◇'}</div>
       <div><span className="policy-eyebrow">{kind.toUpperCase()} / POLICY LIBRARY</span><h2>{kind} policies</h2>
-        <p>Choose checks once, then assign each policy to the groups that need it.</p></div></div>
-      <button type="button" className="btn primary" onClick={() => setEditor({ type: 'policy', policy: null })}>Create {kind} policy</button></header>
-    <div className="policy-summary-line"><span><strong>{active.length}</strong> created policies</span><span><strong>{catalog.entry_count}</strong> available checks</span>
-      <button type="button" className="policy-text-button" onClick={() => setBrowse(true)}>Browse check catalog</button></div>
+        <p>{catalog.category === 'dlp' ? 'Protect sensitive data in prompts and responses.' : 'Set the safety boundaries for your teams’ AI conversations.'} Build a policy once, then assign it wherever it belongs.</p></div></div>
+      <button type="button" className="btn primary" onClick={() => setEditor({ type: 'policy', policy: null })}><span aria-hidden="true">＋</span> Create {kind} policy</button></header>
+    <div className="policy-summary-line" aria-label="Policy library summary"><div><span>Created policies</span><strong>{active.length}</strong><small>Reusable definitions</small></div><div><span>In use</span><strong>{assignedPolicies.length}</strong><small>Active and assigned</small></div><div><span>Covered groups</span><strong>{coveredGroups}</strong><small>Across this library</small></div><div><span>Available checks</span><strong>{catalog.entry_count}</strong><small>In the {kind} catalog</small></div></div>
     {selectedGroup && <p className="policy-service-notice">Viewing from {selectedGroup.name}. Create a policy or use “Assign groups” below to include this group.</p>}
     {message && <p role="status" className="policy-success">{message}</p>}
+    {busy && <InlineLoadingBar label="Updating policy status…" />}
     {error && <p role="alert" className="admin-error">{error}</p>}
     {oldGroupIds.length > 0 && <section className="policy-legacy-note"><div><strong>{oldGroupIds.length} earlier direct group assignment{oldGroupIds.length === 1 ? '' : 's'} still active</strong>
       <p>These catalog assignments continue to apply alongside created policies. Create replacements and attach them to groups before clearing the earlier assignments.</p></div>
       <button type="button" className="btn" disabled={busy === 'legacy'} onClick={clearOldAssignments}>{busy === 'legacy' ? 'Removing…' : 'Remove earlier assignments'}</button></section>}
-    <section className="policy-surface"><div className="policy-section-header"><div><h2>Created policies</h2><p>Policy definitions and group assignments are separate. A policy can serve many groups.</p></div><span className="policy-number">{visible.length} shown</span></div>
-      {active.length > 0 && <div className="policy-table-tools"><input type="search" aria-label="Search policies" placeholder="Search policy name or description" value={search} onChange={(event) => setSearch(event.target.value)} /></div>}
+    <section className="policy-surface"><div className="policy-section-header"><div><span className="policy-eyebrow">YOUR LIBRARY</span><h2>Created policies</h2><p>Policy definitions and group assignments stay separate, so you can reuse a policy across teams.</p></div><span className="policy-number">{visible.length} shown</span></div>
+      <div className="policy-table-tools"><input type="search" aria-label="Search policies" placeholder="Search policies by name or description…" value={search} onChange={(event) => setSearch(event.target.value)} /><button type="button" className="policy-text-button" onClick={() => setBrowse(true)}>Browse all {catalog.entry_count} checks <span aria-hidden="true">↗</span></button></div>
       <div className="policy-set-list">{visible.map((policy) => {
         const names = groups.filter((group) => policy.scope.group_ids.includes(group._id)).map((group) => group.name)
         return <article className="policy-set-row" key={policy._id}>
-          <div className="policy-set-main"><div className="policy-set-title"><h3>{policy.name}</h3><span className={`policy-assignment-status ${policy.status === 'active' && names.length ? 'is-assigned' : ''}`}>{policy.status === 'active' && !names.length ? 'Not assigned' : policy.status}</span></div>
-            <p>{policy.description || 'No description added.'}</p><div className="policy-set-meta"><span><strong>{policy.selected_entry_ids.length}</strong> / {catalog.entry_count} checks</span><span><strong>{names.length}</strong> groups{names.length ? ` · ${names.slice(0, 3).join(', ')}${names.length > 3 ? ` +${names.length - 3}` : ''}` : ''}</span></div></div>
+          <div className="policy-set-main"><div className="policy-set-title"><span className="policy-set-icon" aria-hidden="true">{catalog.category === 'dlp' ? '◈' : '◇'}</span><h3>{policy.name}</h3><span className={`policy-assignment-status ${policy.status === 'active' && names.length ? 'is-assigned' : ''}`}>{policy.status === 'active' && !names.length ? 'Not assigned' : policy.status}</span></div>
+            <p>{policy.description || 'No description added.'}</p><div className="policy-set-meta"><span><strong>{policy.selected_entry_ids.length}</strong> of {catalog.entry_count} checks</span><span><strong>{names.length}</strong> groups{names.length ? ` · ${names.slice(0, 3).join(', ')}${names.length > 3 ? ` +${names.length - 3}` : ''}` : ''}</span></div><div className="policy-set-meter" aria-label={`${policy.selected_entry_ids.length} of ${catalog.entry_count} checks selected`}><span style={{ width: `${catalog.entry_count ? policy.selected_entry_ids.length / catalog.entry_count * 100 : 0}%` }} /></div></div>
           <div className="policy-set-actions"><button type="button" className="btn" onClick={() => setEditor({ type: 'policy', policy })}>Edit checks</button>
             <button type="button" className="btn primary" onClick={() => setEditor({ type: 'groups', policy })}>Assign groups</button>
             <button type="button" className="policy-text-button" disabled={busy === policy._id} onClick={() => status(policy, policy.status === 'active' ? 'disabled' : 'active')}>{policy.status === 'active' ? 'Disable' : 'Enable'}</button>
@@ -164,11 +169,14 @@ export default function PoliciesPage({ filterGroupId = '', policyKind = '' }) {
   const [groups, setGroups] = useState([])
   const [active, setActive] = useState('dlp')
   const [loading, setLoading] = useState(true)
+  const [loadStage, setLoadStage] = useState('Loading policy catalogs…')
+  const [loadKey, setLoadKey] = useState(0)
   const [error, setError] = useState('')
   const kind = policyKind || active
   useEffect(() => {
     let cancelled = false
     async function load() {
+      setLoading(true); setError(''); setLoadStage('Loading policy catalogs…')
       try {
         async function allPolicySets(category) {
           const items = []
@@ -181,6 +189,7 @@ export default function PoliciesPage({ filterGroupId = '', policyKind = '' }) {
         }
         const [catalogResult, dlp, guardrail] = await Promise.all([listPolicies('?page_size=100'),
           allPolicySets('dlp'), allPolicySets('guardrail')])
+        if (!cancelled) setLoadStage('Loading groups and assignments…')
         const allGroups = []
         let page = 1
         while (!cancelled) {
@@ -195,12 +204,12 @@ export default function PoliciesPage({ filterGroupId = '', policyKind = '' }) {
     }
     void load()
     return () => { cancelled = true }
-  }, [])
+  }, [loadKey])
   function saved(policy) { setPolicies((current) => [policy, ...current.filter((item) => item._id !== policy._id)]) }
   function savedCatalog(catalog) { setCatalogs((current) => current.map((item) => item._id === catalog._id ? catalog : item)) }
   return <section className="admin-stack policy-page">
-    {loading && <p role="status">Loading policies…</p>}
-    {error && <p role="alert" className="admin-error">{error}</p>}
+    {loading && <LoadingSurface kind="policy" label={loadStage} />}
+    {error && <div className="policy-load-error"><p role="alert" className="admin-error">{error}</p><button type="button" className="btn" onClick={() => setLoadKey((value) => value + 1)}>Try again</button></div>}
     {!policyKind && !loading && <div className="policy-switch" aria-label="Policy type">{['dlp', 'guardrail'].map((item) => <button type="button" key={item} aria-pressed={kind === item} onClick={() => setActive(item)}>{label(item)} policies</button>)}</div>}
     {!loading && !error && !catalogs.some((item) => item.category === kind) && <div className="policy-surface policy-empty"><strong>No {label(kind)} catalog available</strong><p>Import the {label(kind)} check catalog before creating a policy.</p></div>}
     {!loading && !error && catalogs.filter((item) => item.category === kind).map((catalog) => <PolicyWorkspace key={catalog._id} catalog={catalog} policies={policies.filter((policy) => policy.category === kind)} groups={groups} filterGroupId={filterGroupId} onSaved={saved} onCatalogSaved={savedCatalog} />)}

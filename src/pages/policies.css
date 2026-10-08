@@ -198,3 +198,51 @@
   .policy-page .policy-set-actions { justify-content: flex-start; max-width: none; }
   .policy-page .policy-set-actions .btn { flex: 1; }
 }
+
+/* Policy library refresh */
+.policy-page { --policy-accent:#385cc6; --policy-tint:#edf3ff; --policy-border:#c9d8fa; --policy-muted:#627089; }
+.policy-page .policy-guardrail { --policy-accent:#7053b8; --policy-tint:#f2efff; --policy-border:#d9cef5; }
+.policy-page .policy-overview { gap:18px; }
+.policy-page .policy-intro { position:relative; align-items:center; min-height:158px; overflow:hidden; padding:24px 28px; border:1px solid var(--policy-border); border-radius:15px; background:radial-gradient(circle at 84% -18%,var(--policy-border),transparent 28%),linear-gradient(110deg,#fff,var(--policy-tint)); }
+.policy-page .policy-intro::after { position:absolute; right:130px; bottom:-135px; width:270px; height:270px; border:1px solid var(--policy-border); border-radius:50%; opacity:.65; pointer-events:none; content:''; }
+.policy-page .policy-symbol { width:58px; height:58px; border-radius:16px; box-shadow:0 9px 24px rgb(42 65 136 / 9%); background:var(--panel); font-size:25px; }
+.policy-page .policy-intro-copy { position:relative; z-index:1; max-width:780px; }
+.policy-page .policy-intro h2 { margin:3px 0 5px; font-size:clamp(23px,2vw,30px); font-weight:730; letter-spacing:-.04em; }
+.policy-page .policy-intro p { max-width:65ch; font-size:13px; line-height:1.55; }
+.policy-page .policy-intro > .btn { position:relative; z-index:1; min-height:42px; border-radius:9px; box-shadow:0 7px 18px rgb(44 76 153 / 16%); white-space:nowrap; }
+.policy-page .policy-intro > .btn span { font-size:21px; font-weight:400; line-height:10px; }
+.policy-page .policy-summary-line { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:0; border:0; }
+.policy-page .policy-summary-line > div { display:grid; align-content:start; gap:3px; min-height:108px; padding:15px 18px; border:1px solid var(--line); border-radius:11px; background:var(--panel); box-shadow:0 3px 12px rgb(30 45 80 / 3%); }
+.policy-page .policy-summary-line > div > span { color:var(--ink-2); font-size:11px; font-weight:650; }
+.policy-page .policy-summary-line strong { margin:2px 0 0; font-size:25px; font-weight:730; line-height:1.1; letter-spacing:-.04em; }
+.policy-page .policy-summary-line small { color:var(--ink-3); font-size:10px; }
+.policy-page .policy-surface { border-radius:13px; box-shadow:0 4px 16px rgb(30 45 80 / 3%); }
+.policy-page .policy-section-header { padding:23px 24px 17px; }
+.policy-page .policy-section-header h2 { margin:5px 0 0; font-size:18px; font-weight:700; }
+.policy-page .policy-section-header p { margin-top:5px; }
+.policy-page .policy-number { border-radius:100px; background:var(--panel-2); color:var(--ink-2); }
+.policy-page .policy-table-tools { display:flex; align-items:center; gap:16px; padding:0 24px 20px; }
+.policy-page .policy-table-tools input { flex:1; min-width:0; min-height:42px; padding:9px 13px; border-radius:8px; background:#fbfcff; }
+.policy-page .policy-table-tools .policy-text-button { white-space:nowrap; }
+.policy-page .policy-set-list { border-top-color:var(--line-2); }
+.policy-page .policy-set-row { gap:25px; padding:21px 24px; border-color:var(--line-2); }
+.policy-page .policy-set-row:hover { background:#fbfcff; }
+.policy-page .policy-set-title { gap:10px; }
+.policy-page .policy-set-icon { display:grid; place-items:center; flex:0 0 29px; width:29px; height:29px; border:1px solid var(--policy-border); border-radius:8px; background:var(--policy-tint); color:var(--policy-accent); font-size:16px; }
+.policy-page .policy-set-title h3 { font-size:15px; font-weight:700; letter-spacing:-.015em; }
+.policy-page .policy-set-main > p { margin:7px 0 12px 39px; max-width:65ch; }
+.policy-page .policy-set-meta { gap:9px 22px; margin-left:39px; color:var(--ink-2); font-size:11px; }
+.policy-page .policy-set-meter { width:min(100%,310px); height:5px; margin:13px 0 0 39px; overflow:hidden; border-radius:20px; background:#e9edf5; }
+.policy-page .policy-set-meter > span { display:block; min-width:3px; height:100%; border-radius:inherit; background:var(--policy-accent); }
+.policy-page .policy-set-actions { max-width:365px; gap:7px; }
+.policy-page .policy-set-actions .btn { min-height:36px; padding:7px 11px; font-size:11px; }
+.policy-page .policy-set-actions .policy-text-button,.policy-page .policy-set-actions .policy-remove { padding-inline:7px; font-size:11px; }
+.policy-page .policy-assignment-status { border-radius:100px; background:#f0f3f8; color:#627089; font-size:10px; font-weight:650; }
+.policy-page .policy-footnote { padding:0 2px; font-size:11px; }
+.policy-page .policy-success { border-color:#bcd9cc; border-radius:9px; background:#effaf4; color:#226b4a; }
+.policy-page .policy-load-error { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.policy-page .policy-load-error .admin-error { flex:1; margin:0; }
+.policy-page .assignment-editor-footer { background:#f8faff; }
+@media (max-width:1000px) { .policy-page .policy-summary-line { grid-template-columns:repeat(2,minmax(0,1fr)); } .policy-page .policy-set-row { align-items:stretch; flex-direction:column; } .policy-page .policy-set-actions { justify-content:flex-start; max-width:none; padding-left:39px; } }
+@media (max-width:760px) { .policy-page .policy-intro { min-height:0; padding:20px; } .policy-page .policy-intro > .btn { width:100%; } .policy-page .policy-table-tools { align-items:stretch; flex-direction:column; padding-inline:18px; } .policy-page .policy-table-tools .policy-text-button { align-self:flex-start; } .policy-page .policy-set-actions { padding-left:0; } .policy-page .policy-set-row { padding:18px; } .policy-page .policy-set-main > p,.policy-page .policy-set-meta,.policy-page .policy-set-meter { margin-left:0; } }
+@media (max-width:460px) { .policy-page .policy-summary-line { gap:8px; } .policy-page .policy-summary-line > div { min-height:100px; padding:12px; } .policy-page .policy-intro-copy { flex-direction:column; } .policy-page .policy-set-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .policy-page .policy-set-actions .btn { white-space:normal; } }

@@ -1,4 +1,5 @@
 import { apiRequest, getAuthToken } from '../api/client'
+import { beginTrackedRequest } from '../api/requestActivity'
 
 const root = '/red-team'
 export const redTeamCapabilities = () => apiRequest(`${root}/capabilities`)
@@ -19,18 +20,21 @@ export const getRedTeamReport = (id) => apiRequest(`${root}/tests/${id}/report`)
 export const compareRedTeamTests = (rawId, protectedId) => apiRequest(`${root}/comparisons?${new URLSearchParams({ raw_test_id: rawId, protected_test_id: protectedId })}`)
 
 export async function downloadRedTeamExport(id, format) {
-  const token = getAuthToken()
-  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}${root}/tests/${id}/export?format=${format}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(body.detail?.message || `Export failed (${response.status})`)
-  }
-  const blob = await response.blob()
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `red-team-${id}.${format}`
-  link.click()
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  const finish = beginTrackedRequest()
+  try {
+    const token = getAuthToken()
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}${root}/tests/${id}/export?format=${format}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error(body.detail?.message || `Export failed (${response.status})`)
+    }
+    const blob = await response.blob()
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `red-team-${id}.${format}`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  } finally { finish() }
 }
