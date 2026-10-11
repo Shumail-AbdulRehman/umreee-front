@@ -86,3 +86,89 @@
 @media (max-width:950px) { .studio-layout { grid-template-columns:260px minmax(0,1fr); } .studio-workspace-body { padding:24px 20px; } .studio-composer { margin:0 18px 18px; } }
 @media (max-width:700px) { .studio-policy-banner { align-items:flex-start; flex-wrap:wrap; } .studio-policy-banner > div { flex-basis:calc(100% - 51px); } .studio-policy-banner a { margin-left:51px; } .studio-layout { position:relative; display:block; height:auto; max-height:none; min-height:calc(100dvh - 210px); overflow:visible; } .studio-history { display:none; } .studio-history.is-open { display:flex; max-height:330px; border-right:0; border-bottom:1px solid var(--line); } .studio-history-list { overflow-y:auto; } .studio-workspace { min-height:600px; } .studio-history-toggle { display:inline-block; } .studio-workspace-body { min-height:250px; } }
 @media (max-width:480px) { .studio-policy-banner { padding:12px; } .studio-composer { margin:0 12px 12px; } .studio-composer-controls > label { min-width:calc(50% - 5px); } .studio-options { flex:1; } .studio-send { flex:1; } .studio-run-stats { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Conversation workspace: one history item per chat, a scrolling transcript,
+   and a composer that stays within reach while the thread grows. */
+.studio-layout { height:calc(100dvh - 285px); min-height:480px; max-height:none; grid-template-columns:270px minmax(0,1fr); box-shadow:none; }
+.studio-history { background:oklch(98% .006 265); }
+.studio-history-head, .studio-workspace-head { min-height:75px; padding:17px 20px; }
+.studio-workspace-head > div:first-child { min-width:0; }
+.studio-workspace-head h2 { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65ch; font-size:16px; }
+.studio-header-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.studio-history-close { display:none; border:1px solid var(--line); border-radius:8px; background:var(--panel); padding:8px 10px; color:var(--ink-2); cursor:pointer; }
+.studio-header-new, .studio-new-chat, .studio-load-older { border:1px solid var(--line); border-radius:8px; background:var(--panel); color:var(--ink-2); cursor:pointer; }
+.studio-header-new { padding:8px 11px; font-size:12px; white-space:nowrap; }
+.studio-new-chat { display:flex; align-items:center; gap:9px; margin:14px 14px 4px; padding:11px 13px; text-align:left; font-size:13px; font-weight:650; }
+.studio-new-chat span { font-size:19px; line-height:1; }
+.studio-new-chat:hover, .studio-header-new:hover, .studio-load-older:hover { background:oklch(95% .013 265); border-color:oklch(83% .025 265); }
+.studio-page button:disabled { cursor:not-allowed; }
+.studio-history-item { border-bottom-color:transparent; margin-bottom:3px; padding:12px; gap:7px; }
+.studio-history-item.is-active { border-color:transparent; background:oklch(94% .025 265); }
+.studio-history-item:disabled { opacity:.7; }
+.studio-history-title { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:12px; font-weight:600; }
+.studio-history-meta { color:var(--ink-3); font-size:10px; }
+.studio-history-empty { line-height:1.6; }
+.studio-history-empty strong { display:block; color:var(--ink-2); font-size:13px; }
+.studio-history-empty p { margin:6px 0; }
+.studio-history-footnote { margin:0; padding:13px 17px; border-top:1px solid var(--line-2); color:var(--ink-3); font-size:11px; }
+.studio-workspace-body { padding:25px clamp(18px,3vw,42px); overscroll-behavior:contain; }
+.studio-conversation-thread { width:min(100%,780px); margin:0 auto; }
+.studio-turn { padding-bottom:26px; }
+.studio-turn + .studio-turn { padding-top:10px; }
+.studio-turn .studio-run-meta { margin:0 0 12px; justify-content:flex-end; }
+.studio-turn .studio-run-meta > .studio-status { display:none; }
+.studio-message { font-size:14px; line-height:1.75; }
+.studio-message-user { max-width:80%; border:0; background:oklch(95% .015 265); border-radius:16px 16px 4px 16px; margin-bottom:18px; }
+.studio-message-response { max-width:100%; border:0; background:transparent; padding:4px 0 12px; margin-bottom:0; }
+.studio-message-response p { max-width:75ch; }
+.studio-message-response .studio-message-label { color:var(--ink-2); margin-bottom:8px; }
+.studio-message-details { margin-top:12px; color:var(--ink-3); font-size:11px; }
+.studio-message-details > summary { display:flex; align-items:center; gap:9px; width:fit-content; cursor:pointer; padding:5px 0; list-style:none; }
+.studio-message-details > summary::before { content:'›'; font-size:17px; }
+.studio-message-details[open] > summary::before { content:'⌄'; }
+.studio-message-details > summary::-webkit-details-marker { display:none; }
+.studio-message-details > summary:focus-visible, .studio-options summary:focus-visible { outline:3px solid var(--indigo); outline-offset:3px; }
+.studio-message-details .studio-findings { border:0; border-radius:0; padding:10px 0; margin-top:8px; }
+.studio-message-details .studio-run-stats { margin:10px 0 0; padding:12px 0 0; }
+.studio-empty-icon { background:oklch(94% .027 265); color:var(--indigo); box-shadow:none; border-radius:18px; }
+.studio-empty h2 { font-size:24px; font-weight:650; }
+.studio-empty p { max-width:45ch; }
+.studio-composer { width:calc(100% - 40px); max-width:820px; margin:0 auto 18px; padding:14px 16px 10px; background:var(--panel); box-shadow:0 3px 12px rgb(31 48 83 / 4%); }
+.studio-composer textarea { min-height:62px; max-height:150px; font-size:14px; }
+.studio-prompt-label { text-transform:none; letter-spacing:0; font-size:12px; color:var(--ink-3); font-weight:500; }
+.studio-composer-controls { gap:8px; }
+.studio-composer-controls > label { max-width:220px; min-width:130px; }
+.studio-send { min-height:36px; min-width:86px; font-size:12px; }
+.studio-send span { font-size:20px; line-height:1; }
+.studio-composer-note { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px 12px; margin-top:3px; color:var(--ink-3); font-size:10px; line-height:1.5; }
+.studio-thinking { display:flex; align-items:center; gap:9px; padding:10px 0; color:var(--ink-3); font-size:12px; }
+.studio-thinking-dot { width:8px; height:8px; border-radius:50%; background:var(--indigo); animation:studio-pulse 1.5s ease-out infinite; }
+@keyframes studio-pulse { 50% { opacity:.35; } }
+.studio-load-older { display:block; margin:0 auto 24px; padding:8px 14px; font-size:12px; }
+.studio-thread-loading { width:min(100%,700px); margin:20px auto; }
+.studio-thread-loading > span { display:block; height:16px; margin-bottom:12px; border-radius:5px; background:oklch(95% .01 265); }
+.studio-thread-loading > span:first-child { width:58%; margin-left:auto; height:65px; }
+.studio-thread-loading > span:nth-child(3) { width:75%; }
+.studio-thread-loading p { color:var(--ink-3); font-size:12px; }
+@media (max-width:1100px) { .studio-keyboard-hint { display:none; } }
+@media (max-width:950px) { .studio-layout { grid-template-columns:230px minmax(0,1fr); } .studio-workspace-head { padding:15px; } .studio-composer-controls > label { min-width:120px; } }
+@media (max-width:700px) {
+  .studio-layout { display:flex; flex-direction:column; height:calc(100dvh - 335px); min-height:480px; overflow:hidden; }
+  .studio-workspace { flex:1; min-height:0; overflow:hidden; }
+  .studio-history.is-open { position:absolute; inset:0; z-index:5; max-height:none; height:100%; width:100%; border-right:0; border-bottom:0; }
+  .studio-history.is-open .studio-history-list { min-height:0; }
+  .studio-history-close { display:inline-block; }
+  .studio-history-head > div { flex:1; }
+  .studio-workspace-body { min-height:0; padding:18px 16px; }
+  .studio-message-user { max-width:92%; }
+  .studio-composer { width:calc(100% - 24px); margin:0 auto 12px; padding:12px; }
+  .studio-composer textarea { min-height:56px; max-height:110px; }
+  .studio-composer-controls > label { min-width:calc(50% - 5px); max-width:none; }
+  .studio-options { flex:1; }
+  .studio-send { flex:0 0 auto; }
+  .studio-empty h2 { font-size:21px; }
+  .studio-empty p { font-size:12px; }
+  .studio-policy-banner small { display:none; }
+  .studio-policy-banner p { font-size:11px; }
+}
+@media (prefers-reduced-motion:reduce) { .studio-thinking-dot { animation:none; } }

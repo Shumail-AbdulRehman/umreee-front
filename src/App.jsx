@@ -219,6 +219,7 @@ export default function App() {
             openCreateUser={openCreateUser} openCreateIntegration={openCreateIntegration}
             filterGroupId={filterGroupId} filterIntegrationId={filterIntegrationId}
             runId={hashState.params.get('run_id') || ''} filterStatus={hashState.params.get('status') || ''}
+            conversationId={hashState.params.get('chat') || ''}
             testId={hashState.params.get('test') || ''} /></PageLoadingBoundary> : null}
           {!isStandalonePage && loading ? <LoadingSurface label="Loading overview…" /> : null}
           {!isStandalonePage && !loading && error ? <ErrorState error={error} /> : null}

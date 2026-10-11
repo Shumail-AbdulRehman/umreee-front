@@ -6,6 +6,8 @@ export async function fetchPromptWorkspaceContext() {
 
 export const fetchPromptWorkspaceRuns = (page = 1, status = '') => apiRequest(`/prompt-workspace/runs?${new URLSearchParams({ page: String(page), status })}`)
 export const fetchPromptWorkspaceRun = (id) => apiRequest(`/prompt-workspace/runs/${id}`)
+export const fetchConversations = (page = 1) => apiRequest(`/prompt-workspace/conversations?page=${page}`)
+export const fetchConversation = (id, page = 1) => apiRequest(`/prompt-workspace/conversations/${id}?page=${page}`)
 
 export async function executePromptWorkspaceRun(formData, key) {
   return apiRequest('/prompt-workspace/run', {
