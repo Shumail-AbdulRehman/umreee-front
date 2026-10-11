@@ -7,17 +7,28 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test tests/api-contract.test.mjs",
+    "test:ui": "node tests/redesign.browser.cjs",
+    "test:workflows": "node tests/conversations.browser.cjs && node tests/admin-policy-groups.browser.cjs && node tests/policy-pages.browser.cjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.55.0",
+    "radix-ui": "^1.7.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "recharts": "^3.10.1",
+    "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@babel/core": "^7.29.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

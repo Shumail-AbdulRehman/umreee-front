@@ -36,7 +36,7 @@ function PolicyEditor({ catalog, policy, onClose, onSaved }) {
     } catch (problem) { setError(problem.message) }
     finally { setBusy(false) }
   }
-  return <Modal title={policy ? `Edit ${policy.name}` : `Create ${label(catalog.category)} policy`} wide dirty={dirty && !busy} onClose={onClose}>
+  return <Modal className="policy-page" title={policy ? `Edit ${policy.name}` : `Create ${label(catalog.category)} policy`} wide dirty={dirty && !busy} onClose={onClose}>
     <form onSubmit={save}>
       <div className="assignment-editor-body policy-set-editor">
         <p className="policy-editor-intro">Create the policy first. Group assignments are managed separately and can be changed later.</p>
@@ -75,7 +75,7 @@ function GroupEditor({ policy, groups, onClose, onSaved }) {
     } catch (problem) { setError(problem.message) }
     finally { setBusy(false) }
   }
-  return <Modal title={`Assign ${policy.name} to groups`} wide dirty={dirty && !busy} onClose={onClose}>
+  return <Modal className="policy-page" title={`Assign ${policy.name} to groups`} wide dirty={dirty && !busy} onClose={onClose}>
     <div className="assignment-editor-body"><p className="policy-editor-intro">Every selected group receives the same {policy.selected_entry_ids.length} checks. You can reuse this policy across groups without creating a copy.</p>
       <PolicyGroupPicker groups={groups} selected={selected} onChange={setSelected} disabled={busy} />
       {busy && <InlineLoadingBar label="Saving group assignments…" />}
@@ -155,7 +155,7 @@ function PolicyWorkspace({ catalog, policies, groups, onSaved, onCatalogSaved, f
     <p className="policy-footnote">New policies start with no group assignments. Each policy's checks apply to every group assigned to it.</p>
     {editor?.type === 'policy' && <PolicyEditor key={editor.policy?._id || 'new'} catalog={catalog} policy={editor.policy} onClose={() => setEditor(null)} onSaved={saved} />}
     {editor?.type === 'groups' && <GroupEditor key={editor.policy._id} policy={editor.policy} groups={groups} onClose={() => setEditor(null)} onSaved={saved} />}
-    {browse && <Modal title={`${kind} check catalog`} wide onClose={() => setBrowse(false)}><div className="assignment-editor-body"><PolicyCheckPicker entries={catalog.entries} selected={[]} readOnly /></div>
+    {browse && <Modal className="policy-page" title={`${kind} check catalog`} wide onClose={() => setBrowse(false)}><div className="assignment-editor-body"><PolicyCheckPicker entries={catalog.entries} selected={[]} readOnly /></div>
       <div className="assignment-editor-footer"><span>{catalog.entry_count} available checks</span><button className="btn" type="button" onClick={() => setBrowse(false)}>Done</button></div></Modal>}
   </div>
 }

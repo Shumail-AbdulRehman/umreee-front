@@ -1,3 +1,4 @@
+import { ArrowUp, MessageSquare, Plus, ShieldCheck, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { executePromptWorkspaceRun, fetchPromptWorkspaceContext, fetchPromptWorkspaceRun, fetchConversations, fetchConversation } from '../services/promptWorkspace/promptWorkspaceService'
 import { isAdmin } from '../utils/permissions'
@@ -45,7 +46,7 @@ function Findings({ run }) {
 }
 
 function RunDetail({ run, currentUser }) {
-  if (!run) return <div className="studio-empty"><span className="studio-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 5h16v12H8l-4 3V5Z" /><path d="M8 9h8M8 12h5" /></svg></span>
+  if (!run) return <div className="studio-empty"><span className="studio-empty-icon" aria-hidden="true"><MessageSquare size={25} /></span>
     <h2>What would you like to explore?</h2><p>Your prompt runs through your organization’s applicable policies before it reaches the model.</p></div>
   return <div className="studio-thread">
     <div className="studio-run-meta"><span className={'studio-status studio-status-' + runTone(run.status)}>{runLabel(run.status)}</span><span>{formatTime(run.created_at)}</span><span>{run.model}</span></div>
@@ -315,7 +316,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
   function retryHistory() { setHistoryLoading(true); setHistoryReload((current) => current + 1) }
   return <div className="studio-page">
     <div className={'studio-policy-banner ' + (context.enforcement_ready === false || policySetupRequired ? 'is-warning' : '')} role="status">
-      <span className="studio-policy-icon" aria-hidden="true">◈</span>
+      <span className="studio-policy-icon" aria-hidden="true"><ShieldCheck size={17} /></span>
       <div><strong>{policySetupRequired ? 'Policy setup required' : context.enforcement_ready === false ? 'Policy checking needs attention' : optionalAdminPolicy ? 'Policies optional for admins' : policyOptionalWithoutInput ? 'No input policy assigned' : 'Organization policy checks'}</strong>
         <p>{policySetupRequired ? 'Your account needs a group with an active input policy for this integration. Set up your policy groups before sending.' : context.enforcement_ready === false ? context.readiness_reason : optionalAdminPolicy ? 'You can send messages without a policy assignment. Policies assigned to your groups still apply.' : policyOptionalWithoutInput ? 'Your organization allows messages without an input policy. Assigned output policies still apply.' : 'Every message and its conversation context pass through applicable policies. Restricted replies are withheld.'}</p>
         <small>Groups: {context.groups.length ? context.groups.map((group) => group.name).join(', ') : 'none assigned'}</small></div>
@@ -324,8 +325,8 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
     <div className="studio-layout">
       <aside className={'studio-history ' + (historyOpen ? 'is-open' : '')} aria-label="Chat history">
         <div className="studio-history-head"><div><span className="studio-kicker">YOUR WORKSPACE</span><h2>Chats</h2></div>
-          <button type="button" className="studio-new-button" onClick={newChat} disabled={busy} aria-label="New chat" title="New chat">＋</button><button type="button" className="studio-history-close" onClick={() => setHistoryOpen(false)} aria-label="Close chats">✕</button></div>
-        <button type="button" className="studio-new-chat" disabled={busy} onClick={newChat}><span aria-hidden="true">＋</span> New chat</button>
+          <button type="button" className="studio-new-button" onClick={newChat} disabled={busy} aria-label="New chat" title="New chat"><Plus size={16} /></button><button type="button" className="studio-history-close" onClick={() => setHistoryOpen(false)} aria-label="Close chats"><X size={16} /></button></div>
+        <button type="button" className="studio-new-chat" disabled={busy} onClick={newChat}><Plus size={14} aria-hidden="true" /> New chat</button>
         <div className="studio-history-list">
           {historyLoading ? <p className="studio-history-empty" role="status">Loading your chats…</p> : null}
           {historyError && <div className="studio-history-error" role="alert"><strong>{historyUnavailable ? 'Chat history unavailable' : 'Could not load chats'}</strong><p>{historyError}</p><button type="button" onClick={retryHistory} disabled={historyLoading}>{historyLoading ? 'Retrying…' : 'Retry loading chats'}</button></div>}
@@ -340,7 +341,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
       </aside>
       <section className="studio-workspace" aria-label="Conversation" inert={historyOpen ? true : undefined}>
         <header className="studio-workspace-head"><div><span className="studio-kicker">PROMPT STUDIO</span><h2>{chat?.title || (loadingChat ? 'Opening chat…' : 'New chat')}</h2></div>
-          <div className="studio-header-actions"><button type="button" className="studio-history-toggle" aria-expanded={historyOpen} onClick={() => setHistoryOpen(!historyOpen)}>Chats</button><button type="button" className="studio-header-new" onClick={newChat} disabled={busy}>＋ New chat</button></div></header>
+          <div className="studio-header-actions"><button type="button" className="studio-history-toggle" aria-expanded={historyOpen} onClick={() => setHistoryOpen(!historyOpen)}>Chats</button><button type="button" className="studio-header-new" onClick={newChat} disabled={busy}><Plus size={13} />New chat</button></div></header>
         <div className="studio-workspace-body" ref={bodyRef} aria-busy={loadingChat}>
           {loadingChat ? <div className="studio-thread-loading" role="status"><span /><span /><span /><p>Opening your conversation…</p></div> : turns.length ? <div className="studio-conversation-thread">
             {messages.length < messageTotal && <button type="button" className="studio-load-older" disabled={loadingOlder || busy} onClick={loadOlder}>{loadingOlder ? 'Loading…' : 'Load earlier messages'}</button>}
@@ -359,7 +360,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
             }}><option value="">Select integration</option>{context.integrations.map((item) => <option key={item.id} value={item.id}>{item.account_name} · {item.provider}</option>)}</select></label>
             <label>Model<select required disabled={busy || loadingChat} value={form.model} onChange={(event) => setForm({ ...form, model: event.target.value })}><option value="">Select model</option>{selected?.models.map((model) => <option key={model}>{model}</option>)}</select></label>
             <details className="studio-options"><summary>Options</summary><div><label>Temperature<input disabled={busy} type="number" min="0" max="2" step="0.1" value={form.temperature} onChange={(event) => setForm({ ...form, temperature: Number(event.target.value) })} /></label><label>Max tokens<input disabled={busy} type="number" min="1" max="8192" value={form.max_tokens} onChange={(event) => setForm({ ...form, max_tokens: Number(event.target.value) })} /></label></div></details>
-            <button type="submit" className="studio-send" disabled={busy || loadingChat || !historyReady || historyUnavailable || policySetupRequired || !form.integration_id || !form.model || !form.prompt.trim()} aria-label={busy ? 'Waiting for reply' : 'Send message'}>{busy ? 'Thinking…' : 'Send'} <span aria-hidden="true">↑</span></button>
+            <button type="submit" className="studio-send" disabled={busy || loadingChat || !historyReady || historyUnavailable || policySetupRequired || !form.integration_id || !form.model || !form.prompt.trim()} aria-label={busy ? 'Waiting for reply' : 'Send message'}>{busy ? 'Thinking…' : 'Send'} <ArrowUp size={14} aria-hidden="true" /></button>
           </div>
           <div className="studio-composer-note"><span title={contextNote}>Recent allowed messages provide context.</span><span className="studio-keyboard-hint">Enter to send · Shift + Enter for a new line</span></div>
         </form>

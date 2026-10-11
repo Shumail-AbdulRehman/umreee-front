@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { ErrorState } from './components/DataState'
 import LoadingSurface from './components/LoadingSurface'
 import PageLoadingBoundary, { RequestProgress } from './components/PageLoadingBoundary'
@@ -203,6 +203,7 @@ export default function App() {
 
   return (
     <div className={`app-shell ${navCollapsed ? 'nav-collapsed' : ''}`}>
+      <a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus() }}>Skip to content</a>
       <RequestProgress />
       <Sidebar page={page} onNavigate={navigate} user={user} onLogout={handleLogout}
         collapsed={navCollapsed} onToggleCollapse={() => setNavCollapsed((current) => {
@@ -210,20 +211,20 @@ export default function App() {
           return !current
         })} />
 
-      <main className="min-w-0">
-        <Topbar page={page} user={user} />
+      <main className="min-w-0" id="main-content" tabIndex={-1}>
+        <Topbar page={page} user={user} onNavigate={navigate} onLogout={handleLogout} />
 
         <div className="content">
           <PageTitle page={page} />
-          {isStandalonePage ? <PageLoadingBoundary key={`${page}:${filterGroupId}:${filterIntegrationId}:${hashState.params.get('run_id') || ''}:${hashState.params.get('status') || ''}`} label={pageMeta[page].title} kind={page.includes('policy') ? 'policy' : 'dashboard'}><ActivePage currentUser={user}
+          {isStandalonePage ? <PageLoadingBoundary key={`${page}:${filterGroupId}:${filterIntegrationId}:${hashState.params.get('run_id') || ''}:${hashState.params.get('status') || ''}`} label={pageMeta[page].title} kind={page.includes('policy') ? 'policy' : 'dashboard'}><Suspense fallback={<LoadingSurface label="Opening page…" />}><ActivePage currentUser={user}
             openCreateUser={openCreateUser} openCreateIntegration={openCreateIntegration}
             filterGroupId={filterGroupId} filterIntegrationId={filterIntegrationId}
             runId={hashState.params.get('run_id') || ''} filterStatus={hashState.params.get('status') || ''}
             conversationId={hashState.params.get('chat') || ''}
-            testId={hashState.params.get('test') || ''} /></PageLoadingBoundary> : null}
+            testId={hashState.params.get('test') || ''} /></Suspense></PageLoadingBoundary> : null}
           {!isStandalonePage && loading ? <LoadingSurface label="Loading overview…" /> : null}
           {!isStandalonePage && !loading && error ? <ErrorState error={error} /> : null}
-          {!isStandalonePage && !loading && !error && data ? <ActivePage data={data} currentUser={user} /> : null}
+          {!isStandalonePage && !loading && !error && data ? <Suspense fallback={<LoadingSurface label="Opening overview…" />}><ActivePage data={data} currentUser={user} /></Suspense> : null}
         </div>
       </main>
     </div>
