@@ -208,7 +208,7 @@ export default function PoliciesPage({ filterGroupId = '', policyKind = '' }) {
   function saved(policy) { setPolicies((current) => [policy, ...current.filter((item) => item._id !== policy._id)]) }
   function savedCatalog(catalog) { setCatalogs((current) => current.map((item) => item._id === catalog._id ? catalog : item)) }
   return <section className="admin-stack policy-page">
-    {loading && <LoadingSurface kind="policy" label={loadStage} />}
+    {loading && <LoadingSurface kind={policyKind ? `${policyKind}-policy` : 'policies'} label={loadStage} />}
     {error && <div className="policy-load-error"><p role="alert" className="admin-error">{error}</p><button type="button" className="btn" onClick={() => setLoadKey((value) => value + 1)}>Try again</button></div>}
     {!policyKind && !loading && <div className="policy-switch" aria-label="Policy type">{['dlp', 'guardrail'].map((item) => <button type="button" key={item} aria-pressed={kind === item} onClick={() => setActive(item)}>{label(item)} policies</button>)}</div>}
     {!loading && !error && !catalogs.some((item) => item.category === kind) && <div className="policy-surface policy-empty"><strong>No {label(kind)} catalog available</strong><p>Import the {label(kind)} check catalog before creating a policy.</p></div>}

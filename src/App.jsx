@@ -216,13 +216,13 @@ export default function App() {
 
         <div className="content">
           <PageTitle page={page} />
-          {isStandalonePage ? <PageLoadingBoundary key={`${page}:${filterGroupId}:${filterIntegrationId}:${hashState.params.get('run_id') || ''}:${hashState.params.get('status') || ''}`} label={pageMeta[page].title} kind={page.includes('policy') ? 'policy' : 'dashboard'}><Suspense fallback={<LoadingSurface label="Opening page…" />}><ActivePage currentUser={user}
+          {isStandalonePage ? <PageLoadingBoundary key={`${page}:${filterGroupId}:${filterIntegrationId}:${hashState.params.get('run_id') || ''}:${hashState.params.get('status') || ''}`} label={pageMeta[page].title} kind={page}><Suspense fallback={<LoadingSurface kind={page} label={`Opening ${pageMeta[page].title}…`} />}><ActivePage currentUser={user}
             openCreateUser={openCreateUser} openCreateIntegration={openCreateIntegration}
             filterGroupId={filterGroupId} filterIntegrationId={filterIntegrationId}
             runId={hashState.params.get('run_id') || ''} filterStatus={hashState.params.get('status') || ''}
             conversationId={hashState.params.get('chat') || ''}
             testId={hashState.params.get('test') || ''} /></Suspense></PageLoadingBoundary> : null}
-          {!isStandalonePage && loading ? <LoadingSurface label="Loading overview…" /> : null}
+          {!isStandalonePage && loading ? <LoadingSurface kind="insights" label="Loading overview…" /> : null}
           {!isStandalonePage && !loading && error ? <ErrorState error={error} /> : null}
           {!isStandalonePage && !loading && !error && data ? <Suspense fallback={<LoadingSurface label="Opening overview…" />}><ActivePage data={data} currentUser={user} /></Suspense> : null}
         </div>
