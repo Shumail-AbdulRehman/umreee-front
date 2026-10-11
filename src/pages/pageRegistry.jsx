@@ -9,6 +9,7 @@ export const pageRegistry = {
   'guardrail-policy': lazy(() => import('./PoliciesPage').then((module) => ({ default: module.GuardrailPolicyPage }))),
   'prompt-studio': lazy(() => import('./PromptStudioPage')),
   violations: lazy(() => import('./ViolationsPage')),
+  'user-insights': lazy(() => import('./UserInsightsPage')),
   users: lazy(() => import('./UsersPage')),
   'activity-log': lazy(() => import('./ActivityLogPage')),
   catalog: lazy(() => import('./CatalogPage')),

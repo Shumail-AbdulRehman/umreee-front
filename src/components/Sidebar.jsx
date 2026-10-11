@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Activity, ArrowLeftToLine, ArrowRightFromLine, Bot, CircleDollarSign, Clock3, FlaskConical, Layers3, LayoutDashboard, LockKeyhole, LogOut, Menu, MessageSquare, Plug, Settings2, ShieldCheck, TriangleAlert, Users, X } from 'lucide-react'
+import { BarChart3, Activity, ArrowLeftToLine, ArrowRightFromLine, Bot, CircleDollarSign, Clock3, FlaskConical, Layers3, LayoutDashboard, LockKeyhole, LogOut, Menu, MessageSquare, Plug, Settings2, ShieldCheck, TriangleAlert, Users, X } from 'lucide-react'
 import { pageGroups } from '../config/navigation'
 import { isAdmin } from '../utils/permissions'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
-const icons = { 'prompt-studio': MessageSquare, insights: LayoutDashboard, 'activity-log': Activity, violations: TriangleAlert, catalog: Bot, latency: Clock3, spend: CircleDollarSign, users: Users, inventory: Layers3, integrations: Plug, settings: Settings2, 'dlp-policy': LockKeyhole, 'guardrail-policy': ShieldCheck, 'red-team': FlaskConical }
+const icons = { 'prompt-studio': MessageSquare, insights: LayoutDashboard, 'activity-log': Activity, violations: TriangleAlert, catalog: Bot, latency: Clock3, spend: CircleDollarSign, users: Users, 'user-insights': BarChart3, inventory: Layers3, integrations: Plug, settings: Settings2, 'dlp-policy': LockKeyhole, 'guardrail-policy': ShieldCheck, 'red-team': FlaskConical }
 export default function Sidebar({ page, onNavigate, user, onLogout, collapsed, onToggleCollapse }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const admin = isAdmin(user)

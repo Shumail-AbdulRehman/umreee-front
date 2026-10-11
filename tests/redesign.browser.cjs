@@ -17,7 +17,7 @@ const catalogs = ['dlp','guardrail'].map(category=>({_id:`catalog-${category}`,c
 const violation = {id:id(30),policy_name:'Sensitive information',category:'dlp',severity:'high',action:'block',stage:'input',resolution_status:'open',created_at:stamp,version:1,policy_version:1,run_id:runs[1].id,findings:[{type:'email',field:'prompt'}]}
 const score = {compliance_score:0.8,attack_success_rate:0.2,evaluable_fraction:1,passed_count:4,unsafe_count:1,evaluable_count:5,inconclusive_count:0,error_count:0,cancelled_count:0,threshold_verdict:'passed',control_results:{allowed:5,blocked:0,inconclusive:0,error:0},categories:{direct_injection:{pass:3,fail:1},pii_extraction:{pass:1,fail:0}}}
 const test = {id:id(40),name:'Workspace policy evaluation',model:'gpt-4.1-mini',integration_id:id(8),mode:'protected',status:'completed',version:1,created_at:stamp,launched_at:stamp,num_attacks:5,control_count:5,seed:1,catalog_version:'1',evaluator_version:'1',config_snapshot:{integration_name:'Research workspace'},progress:{terminal_jobs:10,total_jobs:10,queued:0,running:0,retry_wait:0,pending:0},score}
-const routes = ['insights','integrations','inventory','policies','dlp-policy','guardrail-policy','prompt-studio','violations','users','activity-log','catalog','latency','spend','settings','red-team']
+const routes = ['insights','integrations','inventory','policies','dlp-policy','guardrail-policy','prompt-studio','violations','users','user-insights','activity-log','catalog','latency','spend','settings','red-team']
 let activeBrowser
 ;(async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROME_PATH || '/usr/bin/google-chrome',headless:true,args:['--no-sandbox']})
@@ -37,6 +37,7 @@ let activeBrowser
   if(p==='/api/notifications') return respond(list([]))
   if(p==='/api/dashboard') return mode==='error'?respond({detail:{message:'Unable to load recorded activity'}},503):respond(mode==='empty'?{summary:{},series:[],models:[]}:dashboard)
   if(p==='/api/analytics/summary') return respond(mode==='empty'?{}:summary)
+  if(p==='/api/analytics/series') return respond(list(dashboard.series))
   if(p==='/api/analytics/models') return respond(list(models))
   if(p==='/api/users') return respond(list(people))
   if(p==='/api/groups') return respond(list(groups))

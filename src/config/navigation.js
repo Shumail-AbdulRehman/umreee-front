@@ -5,6 +5,7 @@ export const pageGroups = [
     { key: 'catalog', label: 'Models' }, { key: 'latency', label: 'Latency' }, { key: 'spend', label: 'Spend' }] },
   { title: 'Manage', items: [
     { key: 'users', label: 'Users', admin: true },
+    { key: 'user-insights', label: 'User insights', admin: true },
     { key: 'inventory', label: 'Groups', admin: true },
     { key: 'integrations', label: 'Integrations', admin: true },
     { key: 'settings', label: 'Settings', admin: true },
@@ -24,6 +25,7 @@ export const pageMeta = {
   catalog: { section: 'Observe', title: 'Models', subtitle: 'Configured models and observed use.' },
   latency: { section: 'Observe', title: 'Latency', subtitle: 'Measured execution times.' },
   spend: { section: 'Observe', title: 'Spend', subtitle: 'Estimates from automatic pricing, custom rates, and reported tokens.' },
+  'user-insights': { section: 'Manage', title: 'User insights', subtitle: 'Explore each person’s activity, policy outcomes, and model usage.' },
   users: { section: 'Manage', title: 'Users', subtitle: 'Invite people and manage access.' },
   inventory: { section: 'Manage', title: 'Groups', subtitle: 'Organize people and manage their policy assignments.' },
   policies: { section: 'Manage', title: 'Policies', subtitle: 'Select DLP patterns and guardrails, then assign them to user groups.' },
