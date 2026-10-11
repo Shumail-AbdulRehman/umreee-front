@@ -11,7 +11,8 @@
     "test": "node --test tests/*.test.mjs",
     "test:ui": "node tests/redesign.browser.cjs",
     "test:workflows": "node tests/conversations.browser.cjs && node tests/admin-policy-groups.browser.cjs && node tests/policy-pages.browser.cjs",
-    "test:user-insights": "node tests/user-insights.browser.cjs"
+    "test:user-insights": "node tests/user-insights.browser.cjs",
+    "test:integrations": "node tests/integrations.browser.cjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
