@@ -3,9 +3,10 @@ import { defineConfig, loadEnv } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
 import tailwindcss from '@tailwindcss/vite'
+import { checkConversationApi } from './scripts/check-api-contract.mjs'
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   if (process.env.NETLIFY === 'true') {
     const apiBase = (env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
@@ -15,6 +16,7 @@ export default defineConfig(({ mode }) => {
       valid = url.protocol === 'https:' && url.pathname === '/api' && !url.search && !url.hash && !url.username && !url.password
     } catch { /* Missing or malformed deployment URL. */ }
     if (!valid) throw new Error('Set VITE_API_BASE_URL in Netlify to your HTTPS backend URL ending in /api, then redeploy.')
+    await checkConversationApi(apiBase)
   }
   return {
     plugins: [

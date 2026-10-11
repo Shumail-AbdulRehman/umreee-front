@@ -110,6 +110,10 @@
 .studio-history-empty { line-height:1.6; }
 .studio-history-empty strong { display:block; color:var(--ink-2); font-size:13px; }
 .studio-history-empty p { margin:6px 0; }
+.studio-history-error { margin:10px 0; padding:13px; border:1px solid oklch(87% .04 75); border-radius:9px; background:oklch(98% .015 75); color:oklch(40% .06 65); font-size:12px; line-height:1.6; }
+.studio-history-error p { margin:6px 0 12px; }
+.studio-history-error button, .studio-history-notice button { border:1px solid var(--line); border-radius:7px; padding:6px 9px; background:var(--panel); color:var(--ink-2); cursor:pointer; font-size:11px; }
+.studio-history-notice { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:7px; background:oklch(97% .016 75); color:oklch(42% .055 65); font-size:12px; }
 .studio-history-footnote { margin:0; padding:13px 17px; border-top:1px solid var(--line-2); color:var(--ink-3); font-size:11px; }
 .studio-workspace-body { padding:25px clamp(18px,3vw,42px); overscroll-behavior:contain; }
 .studio-conversation-thread { width:min(100%,780px); margin:0 auto; }

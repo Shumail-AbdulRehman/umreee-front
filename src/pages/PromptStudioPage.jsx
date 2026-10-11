@@ -22,7 +22,12 @@ const formatTime = (value) => value ? new Date(value).toLocaleString([], { month
 function Findings({ run }) {
   const matches = ['input_evaluation', 'output_evaluation'].flatMap((stage) =>
     (run[stage]?.rule_results || []).filter((item) => item.outcome === 'match').map((item) => ({ ...item, stage })))
-  const errors = [...new Set(['input_evaluation', 'output_evaluation'].flatMap((stage) => run[stage]?.errors || []))]
+  const errors = ['input_evaluation', 'output_evaluation'].flatMap((stage) => {
+    const results = run[stage]?.rule_results || []
+    const failed = results.filter((item) => item.outcome === 'error').map((item) => ({ ...item, stage }))
+    const represented = new Set(failed.map((item) => item.reason_code))
+    return [...failed, ...[...new Set(run[stage]?.errors || [])].filter((code) => !represented.has(code)).map((code) => ({ reason_code: code, stage }))]
+  })
   if (!matches.length && !errors.length) return null
   return <section className="studio-findings" aria-label="Policy check details">
     <h3>Policy check details</h3>
@@ -31,11 +36,15 @@ function Findings({ run }) {
       <span>{item.stage === 'input_evaluation' ? 'Prompt' : 'Response'} · version {item.policy_version}</span>
       {item.evidence?.some((entry) => entry.entry_id) && <ul>{[...new Map(item.evidence.filter((entry) => entry.entry_id).map((entry) => [entry.entry_id, entry])).values()].map((entry) => <li key={entry.entry_id}>{entry.entry_name || entry.entry_id}</li>)}</ul>}
     </div>)}
-    {errors.map((code) => <p className="studio-check-error" key={code}>{validationMessages[code] || 'A security check failed. Contact your administrator.'}</p>)}
+    {errors.map((item, index) => <div className="studio-check-error" key={item.stage + '-' + index}>
+      <strong>{item.policy_name || 'Security check'} · {item.stage === 'input_evaluation' ? 'Input' : 'Output'}</strong>
+      <p>{validationMessages[item.reason_code] || 'A security check failed. Contact your administrator.'}</p>
+      <code>{item.reason_code}</code>
+    </div>)}
   </section>
 }
 
-function RunDetail({ run }) {
+function RunDetail({ run, currentUser }) {
   if (!run) return <div className="studio-empty"><span className="studio-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 5h16v12H8l-4 3V5Z" /><path d="M8 9h8M8 12h5" /></svg></span>
     <h2>What would you like to explore?</h2><p>Your prompt runs through your organization’s applicable policies before it reaches the model.</p></div>
   return <div className="studio-thread">
@@ -44,11 +53,12 @@ function RunDetail({ run }) {
     {run.status === 'blocked_input' && <div className="studio-outcome studio-outcome-blocked" role="alert"><strong>Prompt blocked by policy</strong><p>Your prompt was not sent to the model. Review the matched checks and remove restricted content.</p></div>}
     {run.status === 'blocked_output' && <div className="studio-outcome studio-outcome-blocked" role="alert"><strong>Response withheld</strong><p>The model response failed a policy check, so its text is not shown.</p></div>}
     {run.status === 'validation_error' && <div className="studio-outcome studio-outcome-error" role="alert"><strong>Security check could not complete</strong><p>This is a checking error, not proof of a policy violation. Unchecked content was withheld.</p></div>}
-    {run.error_message && <div className="studio-outcome studio-outcome-error" role="alert">{run.error_message}</div>}
+    {run.error_code === 'policy_required' && <div className="studio-outcome studio-outcome-error" role="alert"><strong>Message not sent</strong><p>No input policy was available under the configuration used for this message. Check your current workspace settings before retrying.</p>{isAdmin(currentUser) ? <a href="#users">Review my policy groups ↗</a> : <p>Ask your administrator to assign your policy groups.</p>}</div>}
+    {run.error_message && run.error_code !== 'policy_required' && <div className="studio-outcome studio-outcome-error" role="alert">{run.error_message}</div>}
     {run.response_text != null && !run.response_withheld && <div className="studio-message studio-message-response"><span className="studio-message-label">Model response</span><p>{run.response_text}</p></div>}
     {run.content_expired && <p className="studio-muted">Stored text has expired; the decision record remains.</p>}
     {run.status === 'processing' && <div className="studio-thinking" role="status"><span className="studio-thinking-dot" />Checking policies and preparing your reply…</div>}
-    {run.status !== 'processing' && <details className="studio-message-details"><summary>Security checks & usage <span className={'studio-status studio-status-' + runTone(run.status)}>{runLabel(run.status)}</span></summary><Findings run={run} />
+    {run.status !== 'processing' && <details className="studio-message-details" open={run.status === 'validation_error'}><summary>Security checks & usage <span className={'studio-status studio-status-' + runTone(run.status)}>{runLabel(run.status)}</span></summary><Findings run={run} />
     <dl className="studio-run-stats">
       <div><dt>Input tokens</dt><dd>{run.prompt_tokens ?? 'Unknown'}</dd></div>
       <div><dt>Output tokens</dt><dd>{run.completion_tokens ?? 'Unknown'}</dd></div>
@@ -72,6 +82,10 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
   const [loadingChat, setLoadingChat] = useState(false)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(true)
+  const [historyError, setHistoryError] = useState('')
+  const [historyUnavailable, setHistoryUnavailable] = useState(false)
+  const [historyReady, setHistoryReady] = useState(false)
+  const [historyReload, setHistoryReload] = useState(0)
   const [pending, setPending] = useState(null)
   const [retry, setRetry] = useState(null)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -102,10 +116,13 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
 
   useEffect(() => {
     let active = true
-    fetchConversations(page).then((value) => { if (active) { setHistory(value); setHistoryLoading(false) } })
-      .catch((problem) => { if (active) { setError(problem.message); setHistoryLoading(false) } })
+    fetchConversations(page).then((value) => {
+      if (active) { setHistory(value); setHistoryLoading(false); setHistoryError(''); setHistoryReady(true); setHistoryUnavailable(false) }
+    }).catch((problem) => {
+      if (active) { setHistoryError(problem.message); setHistoryUnavailable(problem.code === 'conversation_api_unavailable'); setHistoryLoading(false) }
+    })
     return () => { active = false }
-  }, [page])
+  }, [page, historyReload])
 
   useEffect(() => {
     let active = true
@@ -145,12 +162,19 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
   }, [])
 
   const selected = context.integrations.find((item) => item.id === form.integration_id)
+  const policySetupRequired = Boolean(context.require_active_policy && context.input_policy_coverage?.[form.integration_id] === false)
+  const policyOptionalWithoutInput = context.require_active_policy === false && context.input_policy_coverage?.[form.integration_id] === false
+  const optionalAdminPolicy = policyOptionalWithoutInput && isAdmin(currentUser)
   function replaceRoute(id) {
     window.history.replaceState(null, '', id ? `#prompt-studio?chat=${encodeURIComponent(id)}` : '#prompt-studio')
   }
   async function refreshHistory(historyPage = page) {
-    const value = await fetchConversations(historyPage)
-    if (alive.current) setHistory(value)
+    try {
+      const value = await fetchConversations(historyPage)
+      if (alive.current) { setHistory(value); setHistoryError(''); setHistoryReady(true); setHistoryUnavailable(false) }
+    } catch (problem) {
+      if (alive.current) { setHistoryError(problem.message); setHistoryUnavailable(problem.code === 'conversation_api_unavailable') }
+    }
   }
   function applyRun(run) {
     scrollToEnd.current = true
@@ -190,7 +214,12 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
         submitting.current = true; setBusy(true)
         try { await poll(latest.id, fence) } finally { submitting.current = false; if (alive.current) setBusy(false) }
       }
-    } catch (problem) { if (alive.current && fence === generation.current) setError(problem.message) }
+    } catch (problem) {
+      if (alive.current && fence === generation.current) {
+        setError(problem.code === 'not_found' ? 'This conversation could not be found in your account. Choose another chat or start a new one.' : problem.message)
+        if (problem.code === 'conversation_api_unavailable') { setHistoryError(problem.message); setHistoryUnavailable(true) }
+      }
+    }
     finally { if (alive.current && fence === generation.current) setLoadingChat(false) }
   }
   async function loadOlder() {
@@ -211,7 +240,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
   }
   async function submit(event) {
     event.preventDefault()
-    if (submitting.current || !form.prompt.trim() || loadingChat) return
+    if (submitting.current || !form.prompt.trim() || loadingChat || !historyReady || historyUnavailable || policySetupRequired) return
     submitting.current = true; setBusy(true); setError('')
     const fence = generation.current
     const payload = { ...form, ...(chat ? { conversation_id: chat.id } : {}) }
@@ -223,17 +252,34 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
     async function accept(run) {
       if (!alive.current || fence !== generation.current) return
       setPending(null); applyRun(run)
-      const id = run.conversation_id || run.id
+      if (!run.conversation_id) {
+        setHistoryUnavailable(true)
+        setHistoryError('The server recorded this reply without conversation support. Ask your administrator to update the backend, then retry loading chats.')
+        setForm((current) => ({ ...current, prompt: '' })); setRetry(null)
+        return
+      }
+      const id = run.conversation_id
+      const title = chat?.title || form.prompt.trim().replace(/\s+/g, ' ').slice(0, 80)
+      const duplicate = messages.some((item) => item.id === run.id)
+      // Keep confirmed messages discoverable even if the next history GET fails.
+      setHistory((current) => {
+        const existing = current.items.find((item) => item.id === id)
+        const item = { ...(existing || {}), id, title, model: run.model,
+          created_at: existing?.created_at || run.created_at, updated_at: run.created_at,
+          message_count: (existing?.message_count ?? messageTotal) + (duplicate ? 0 : 1) }
+        return { ...current, total: current.total + (!chat && !existing ? 1 : 0),
+          items: [item, ...current.items.filter((entry) => entry.id !== id)].slice(0, current.page_size) }
+      })
       if (!chat) setChat({ id, title: form.prompt.trim().replace(/\s+/g, ' ').slice(0, 80) })
       replaceRoute(id)
       setForm((current) => ({ ...current, prompt: '' })); setRetry(null)
-      setMessageTotal((current) => current + 1)
+      if (!duplicate) setMessageTotal((current) => current + 1)
       try {
         if (!chat) setPage(1)
         await refreshHistory(chat ? page : 1)
         if (run.status === 'processing') await poll(run.id, fence)
       } catch (problem) {
-        if (alive.current && fence === generation.current) setError(`Your message was saved. ${problem.message} Reopen this chat to refresh its status.`)
+        if (alive.current && fence === generation.current) setError(`The server accepted your message, but its status could not be refreshed. ${problem.message}`)
       }
     }
     try {
@@ -266,13 +312,14 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
     }
   }
   const turns = pending ? [...messages, pending] : messages
+  function retryHistory() { setHistoryLoading(true); setHistoryReload((current) => current + 1) }
   return <div className="studio-page">
-    <div className={'studio-policy-banner ' + (context.enforcement_ready === false ? 'is-warning' : '')} role="status">
+    <div className={'studio-policy-banner ' + (context.enforcement_ready === false || policySetupRequired ? 'is-warning' : '')} role="status">
       <span className="studio-policy-icon" aria-hidden="true">◈</span>
-      <div><strong>{context.enforcement_ready === false ? 'Policy checking needs attention' : 'Organization policy checks'}</strong>
-        <p>{context.enforcement_ready === false ? context.readiness_reason : 'Every message and its conversation context pass through applicable policies. Restricted replies are withheld.'}</p>
+      <div><strong>{policySetupRequired ? 'Policy setup required' : context.enforcement_ready === false ? 'Policy checking needs attention' : optionalAdminPolicy ? 'Policies optional for admins' : policyOptionalWithoutInput ? 'No input policy assigned' : 'Organization policy checks'}</strong>
+        <p>{policySetupRequired ? 'Your account needs a group with an active input policy for this integration. Set up your policy groups before sending.' : context.enforcement_ready === false ? context.readiness_reason : optionalAdminPolicy ? 'You can send messages without a policy assignment. Policies assigned to your groups still apply.' : policyOptionalWithoutInput ? 'Your organization allows messages without an input policy. Assigned output policies still apply.' : 'Every message and its conversation context pass through applicable policies. Restricted replies are withheld.'}</p>
         <small>Groups: {context.groups.length ? context.groups.map((group) => group.name).join(', ') : 'none assigned'}</small></div>
-      {isAdmin(currentUser) && <a href="#inventory">Manage groups <span aria-hidden="true">↗</span></a>}
+      {isAdmin(currentUser) ? <a href={policySetupRequired || optionalAdminPolicy ? '#users' : '#inventory'}>{policySetupRequired ? 'Manage my groups' : optionalAdminPolicy ? 'My policy groups' : 'Manage groups'} <span aria-hidden="true">↗</span></a> : policySetupRequired && <p>Ask your administrator to assign your policy groups.</p>}
     </div>
     <div className="studio-layout">
       <aside className={'studio-history ' + (historyOpen ? 'is-open' : '')} aria-label="Chat history">
@@ -280,14 +327,16 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
           <button type="button" className="studio-new-button" onClick={newChat} disabled={busy} aria-label="New chat" title="New chat">＋</button><button type="button" className="studio-history-close" onClick={() => setHistoryOpen(false)} aria-label="Close chats">✕</button></div>
         <button type="button" className="studio-new-chat" disabled={busy} onClick={newChat}><span aria-hidden="true">＋</span> New chat</button>
         <div className="studio-history-list">
-          {historyLoading ? <p className="studio-history-empty" role="status">Loading your chats…</p> : history.items.length ? history.items.map((item) =>
+          {historyLoading ? <p className="studio-history-empty" role="status">Loading your chats…</p> : null}
+          {historyError && <div className="studio-history-error" role="alert"><strong>{historyUnavailable ? 'Chat history unavailable' : 'Could not load chats'}</strong><p>{historyError}</p><button type="button" onClick={retryHistory} disabled={historyLoading}>{historyLoading ? 'Retrying…' : 'Retry loading chats'}</button></div>}
+          {!historyLoading && history.items.length ? history.items.map((item) =>
             <button type="button" key={item.id} disabled={busy} onClick={() => show(item.id)} aria-current={chat?.id === item.id ? 'true' : undefined} className={'studio-history-item ' + (chat?.id === item.id ? 'is-active' : '')}>
               <span className="studio-history-title">{item.title}</span>
               <span className="studio-history-meta"><span className="studio-history-date">{formatTime(item.updated_at)}</span><span>{item.message_count} {item.message_count === 1 ? 'message' : 'messages'}</span></span>
-            </button>) : <div className="studio-history-empty"><strong>A home for your conversations</strong><p>Send a message to save your first chat. Follow-ups stay in the same thread.</p></div>}
+            </button>) : !historyLoading && !historyError ? <div className="studio-history-empty"><strong>A home for your conversations</strong><p>Send a message to save your first chat. Follow-ups stay in the same thread.</p></div> : null}
         </div>
         {history.total > history.page_size && <div className="studio-history-pager"><button type="button" disabled={page <= 1 || busy} onClick={() => setPage(page - 1)}>Previous</button><span>{page} / {Math.ceil(history.total / history.page_size)}</span><button type="button" disabled={page * history.page_size >= history.total || busy} onClick={() => setPage(page + 1)}>Next</button></div>}
-        <p className="studio-history-footnote">Saved to your workspace account.</p>
+        <p className="studio-history-footnote">{historyUnavailable ? 'Chat support requires a server update.' : 'Saved to your workspace account.'}</p>
       </aside>
       <section className="studio-workspace" aria-label="Conversation" inert={historyOpen ? true : undefined}>
         <header className="studio-workspace-head"><div><span className="studio-kicker">PROMPT STUDIO</span><h2>{chat?.title || (loadingChat ? 'Opening chat…' : 'New chat')}</h2></div>
@@ -295,11 +344,12 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
         <div className="studio-workspace-body" ref={bodyRef} aria-busy={loadingChat}>
           {loadingChat ? <div className="studio-thread-loading" role="status"><span /><span /><span /><p>Opening your conversation…</p></div> : turns.length ? <div className="studio-conversation-thread">
             {messages.length < messageTotal && <button type="button" className="studio-load-older" disabled={loadingOlder || busy} onClick={loadOlder}>{loadingOlder ? 'Loading…' : 'Load earlier messages'}</button>}
-            {turns.map((run) => <article className="studio-turn" key={run.id} aria-label={`Message sent ${formatTime(run.created_at)}`}><RunDetail run={run} /></article>)}
+            {turns.map((run) => <article className="studio-turn" key={run.id} aria-label={`Message sent ${formatTime(run.created_at)}`}><RunDetail run={run} currentUser={currentUser} /></article>)}
           </div> : <RunDetail run={null} />}
         </div>
         <form className="studio-composer" onSubmit={submit}>
           {error && <p className="studio-form-error" role="alert">{error}</p>}
+          {(!historyReady || historyUnavailable) && !historyLoading && <div className="studio-history-notice" role="status"><span>Sending is paused until chat history is available.</span><button type="button" onClick={retryHistory}>Retry</button></div>}
           <label className="studio-prompt-label" htmlFor="studio-prompt">{chat ? 'Continue the conversation' : 'Start a conversation'}</label>
           <textarea id="studio-prompt" ref={promptRef} required disabled={busy || loadingChat} maxLength="24000" rows="3" placeholder={chat ? 'Ask a follow-up…' : 'Message Sentinel…'} value={form.prompt} onKeyDown={onComposerKeyDown} onChange={(event) => setForm({ ...form, prompt: event.target.value })} />
           <div className="studio-composer-controls">
@@ -309,7 +359,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
             }}><option value="">Select integration</option>{context.integrations.map((item) => <option key={item.id} value={item.id}>{item.account_name} · {item.provider}</option>)}</select></label>
             <label>Model<select required disabled={busy || loadingChat} value={form.model} onChange={(event) => setForm({ ...form, model: event.target.value })}><option value="">Select model</option>{selected?.models.map((model) => <option key={model}>{model}</option>)}</select></label>
             <details className="studio-options"><summary>Options</summary><div><label>Temperature<input disabled={busy} type="number" min="0" max="2" step="0.1" value={form.temperature} onChange={(event) => setForm({ ...form, temperature: Number(event.target.value) })} /></label><label>Max tokens<input disabled={busy} type="number" min="1" max="8192" value={form.max_tokens} onChange={(event) => setForm({ ...form, max_tokens: Number(event.target.value) })} /></label></div></details>
-            <button type="submit" className="studio-send" disabled={busy || loadingChat || !form.integration_id || !form.model || !form.prompt.trim()} aria-label={busy ? 'Waiting for reply' : 'Send message'}>{busy ? 'Thinking…' : 'Send'} <span aria-hidden="true">↑</span></button>
+            <button type="submit" className="studio-send" disabled={busy || loadingChat || !historyReady || historyUnavailable || policySetupRequired || !form.integration_id || !form.model || !form.prompt.trim()} aria-label={busy ? 'Waiting for reply' : 'Send message'}>{busy ? 'Thinking…' : 'Send'} <span aria-hidden="true">↑</span></button>
           </div>
           <div className="studio-composer-note"><span title={contextNote}>Recent allowed messages provide context.</span><span className="studio-keyboard-hint">Enter to send · Shift + Enter for a new line</span></div>
         </form>
