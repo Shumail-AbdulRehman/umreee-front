@@ -352,7 +352,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
           {error && <p className="studio-form-error" role="alert">{error}</p>}
           {(!historyReady || historyUnavailable) && !historyLoading && <div className="studio-history-notice" role="status"><span>Sending is paused until chat history is available.</span><button type="button" onClick={retryHistory}>Retry</button></div>}
           <label className="studio-prompt-label" htmlFor="studio-prompt">{chat ? 'Continue the conversation' : 'Start a conversation'}</label>
-          <textarea id="studio-prompt" ref={promptRef} required disabled={busy || loadingChat} maxLength="24000" rows="3" placeholder={chat ? 'Ask a follow-up…' : 'Message Sentinel…'} value={form.prompt} onKeyDown={onComposerKeyDown} onChange={(event) => setForm({ ...form, prompt: event.target.value })} />
+          <textarea id="studio-prompt" ref={promptRef} required disabled={busy || loadingChat} maxLength="24000" rows="3" placeholder={chat ? 'Ask a follow-up…' : 'Message Averiq…'} value={form.prompt} onKeyDown={onComposerKeyDown} onChange={(event) => setForm({ ...form, prompt: event.target.value })} />
           <div className="studio-composer-controls">
             <label>Integration<select required disabled={busy || loadingChat} value={form.integration_id} onChange={(event) => {
               const integration = context.integrations.find((item) => item.id === event.target.value)

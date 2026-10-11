@@ -43,7 +43,7 @@ export default function SignupPage({ onVerificationRequired }) {
 
   return (
     <AuthShell
-      eyebrow="Sentinel AI Access"
+      eyebrow="Averiq Access"
       title="Create your organization"
       subtitle="Start a new workspace. If your organization already exists, ask an administrator for an invitation."
       footer={(
@@ -92,7 +92,7 @@ export default function SignupPage({ onVerificationRequired }) {
             type="text"
             value={form.company_name}
             onChange={updateField}
-            placeholder="Sentinel AI Security"
+            placeholder="Averiq Security"
             required
           />
         </label>

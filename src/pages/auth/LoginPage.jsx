@@ -36,7 +36,7 @@ export default function LoginPage({ onAuthenticated, onVerificationRequired }) {
 
   return (
     <AuthShell
-      eyebrow="Sentinel AI Control"
+      eyebrow="Averiq Control"
       title="Sign in to the workspace"
       subtitle="Use your account to access your organization workspace and its policy-protected prompts."
       footer={(

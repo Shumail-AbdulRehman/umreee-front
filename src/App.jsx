@@ -165,9 +165,9 @@ export default function App() {
     }
 
     return (
-      <div className="auth-loading">
+      <main className="auth-loading">
         <LoadingSurface kind="session" label="Restoring your session…" />
-      </div>
+      </main>
     )
   }
 

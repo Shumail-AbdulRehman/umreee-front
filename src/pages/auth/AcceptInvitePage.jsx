@@ -89,7 +89,7 @@ export default function AcceptInvitePage({ token, onGoToLogin }) {
 
   return (
     <AuthShell
-      eyebrow="Sentinel AI Invite"
+      eyebrow="Averiq Invite"
       title="Activate your invited account"
       subtitle="Set a password to join your company workspace and access the application."
       footer={(
