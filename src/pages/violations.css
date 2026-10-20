@@ -1,0 +1,11 @@
+.violation-save-feedback { position:fixed; right:24px; bottom:24px; z-index:160; display:flex; align-items:center; gap:12px; width:min(390px,calc(100vw - 32px)); padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); box-shadow:0 6px 24px oklch(25% .015 285 / .1); }
+.violation-save-feedback > svg { color:var(--green); flex-shrink:0; }
+.violation-save-feedback > div { display:grid; gap:3px; min-width:0; }
+.violation-save-feedback strong { font-size:13px; color:var(--ink); }
+.violation-save-feedback span { font-size:11px; color:var(--ink-3); }
+.violation-save-feedback > button { display:grid; place-items:center; flex-shrink:0; margin-left:auto; padding:6px; border:0; border-radius:5px; background:transparent; color:var(--ink-3); }
+.violation-save-feedback > button:hover { background:var(--panel-2); }
+.violation-save-spinner { animation:violation-save-spin 1s linear infinite; }
+@keyframes violation-save-spin { to { transform:rotate(360deg); } }
+@media(max-width:600px) { .violation-save-feedback { right:16px; bottom:16px; } }
+@media(prefers-reduced-motion:reduce) { .violation-save-spinner { animation:none; } }
