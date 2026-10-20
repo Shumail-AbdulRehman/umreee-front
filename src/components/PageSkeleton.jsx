@@ -41,6 +41,7 @@ function UserReport() {
 export default function PageSkeleton({ kind }) {
   let content
   switch (kind) {
+    case 'violation-detail': content = <><div className="sk-library-intro"><Bone width="64%" height={19} /><Bone width="78%" height={8} /></div><div className="sk-filters"><Bone width={58} height={23} /><Bone width={58} height={23} /></div><section className="sk-panel"><Heading title="Safe evidence" /><div className="sk-fields"><Bone width="92%" height={9} /><Bone width="73%" height={9} /></div></section></>; break
     case 'prompt-studio': content = <Studio />; break
     case 'integrations': content = <Integrations />; break
     case 'users': content = <><Toolbar filters={4} /><Table title="People & access" columns={['Person', 'Role', 'Groups', 'Status', 'Actions']} avatar /></>; break
