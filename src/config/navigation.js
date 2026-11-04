@@ -1,6 +1,7 @@
 export const pageGroups = [
   { title: 'Workspace', items: [{ key: 'prompt-studio', label: 'Prompt Studio' }] },
   { title: 'Observe', items: [{ key: 'insights', label: 'Overview', admin: true },
+    { key: 'my-activity', label: 'My activity', member: true },
     { key: 'activity-log', label: 'Activity' }, { key: 'violations', label: 'Violations' },
     { key: 'catalog', label: 'Models' }, { key: 'latency', label: 'Latency' }, { key: 'spend', label: 'Spend' }] },
   { title: 'Manage', items: [
@@ -21,6 +22,7 @@ export const pageMeta = {
   'prompt-studio': { section: 'Workspace', title: 'Prompt Studio', subtitle: 'Run prompts through your organization policies.' },
   insights: { section: 'Observe', title: 'Organization overview', subtitle: 'Actual run outcomes from the last seven days.' },
   'activity-log': { section: 'Observe', title: 'Activity', subtitle: 'Recorded prompt runs and outcomes.' },
+  'my-activity': { section: 'Observe', title: 'My activity', subtitle: 'Your prompts, outcomes, and model usage in one place.' },
   violations: { section: 'Observe', title: 'Violations', subtitle: 'Review policy matches and resolutions.' },
   catalog: { section: 'Observe', title: 'Models', subtitle: 'Configured models and observed use.' },
   latency: { section: 'Observe', title: 'Latency', subtitle: 'Measured execution times.' },

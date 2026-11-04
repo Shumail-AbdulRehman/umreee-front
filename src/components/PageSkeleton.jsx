@@ -41,6 +41,7 @@ function UserReport() {
 export default function PageSkeleton({ kind }) {
   let content
   switch (kind) {
+    case 'my-activity': content = <><Metrics labels={['Your prompt runs', 'Allowed share', 'Known tokens', 'Known estimated spend']} /><div className="sk-two-columns"><Chart title="Your daily activity" /><Chart title="Your outcomes" /></div><Chart title="Models you use" legend={1} /><Table title="Your recent activity" columns={['Submitted', 'Model', 'Outcome', 'Tokens']} rows={4} /></>; break
     case 'violation-detail': content = <><div className="sk-library-intro"><Bone width="64%" height={19} /><Bone width="78%" height={8} /></div><div className="sk-filters"><Bone width={58} height={23} /><Bone width={58} height={23} /></div><section className="sk-panel"><Heading title="Safe evidence" /><div className="sk-fields"><Bone width="92%" height={9} /><Bone width="73%" height={9} /></div></section></>; break
     case 'prompt-studio': content = <Studio />; break
     case 'integrations': content = <Integrations />; break

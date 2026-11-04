@@ -10,6 +10,7 @@ export const pageRegistry = {
   'prompt-studio': lazy(() => import('./PromptStudioPage')),
   violations: lazy(() => import('./ViolationsPage')),
   'user-insights': lazy(() => import('./UserInsightsPage')),
+  'my-activity': lazy(() => import('./MyActivityPage')),
   users: lazy(() => import('./UsersPage')),
   'activity-log': lazy(() => import('./ActivityLogPage')),
   catalog: lazy(() => import('./CatalogPage')),

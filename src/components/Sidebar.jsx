@@ -6,13 +6,13 @@ import { isAdmin } from '../utils/permissions'
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './ui/dialog'
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
-const icons = { 'prompt-studio': MessageSquare, insights: LayoutDashboard, 'activity-log': Activity, violations: TriangleAlert, catalog: Bot, latency: Clock3, spend: CircleDollarSign, users: Users, 'user-insights': BarChart3, inventory: Layers3, integrations: Plug, settings: Settings2, 'dlp-policy': LockKeyhole, 'guardrail-policy': ShieldCheck, 'red-team': FlaskConical }
+const icons = { 'prompt-studio': MessageSquare, insights: LayoutDashboard, 'my-activity': BarChart3, 'activity-log': Activity, violations: TriangleAlert, catalog: Bot, latency: Clock3, spend: CircleDollarSign, users: Users, 'user-insights': BarChart3, inventory: Layers3, integrations: Plug, settings: Settings2, 'dlp-policy': LockKeyhole, 'guardrail-policy': ShieldCheck, 'red-team': FlaskConical }
 export default function Sidebar({ page, onNavigate, user, onLogout, collapsed, onToggleCollapse }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const admin = isAdmin(user)
   const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ')
   const initials = [user.first_name, user.last_name].filter(Boolean).map((part) => part[0]).join('').toUpperCase()
-  const groups = pageGroups.map((group) => ({ ...group, items: group.items.filter((item) => item.key !== 'settings' && (!item.admin || admin)) })).filter((group) => group.items.length)
+  const groups = pageGroups.map((group) => ({ ...group, items: group.items.filter((item) => item.key !== 'settings' && (!item.admin || admin) && (!item.member || !admin)) })).filter((group) => group.items.length)
   function navigationItem(item, mobile) {
     const Icon = icons[item.key] || Bot
     const button = <button type="button" className={`nav-item ${page === item.key ? 'active' : ''}`} aria-label={item.label} aria-current={page === item.key ? 'page' : undefined} onClick={() => { onNavigate(item.key); setMobileOpen(false) }}><Icon size={18} aria-hidden="true" /><span className="nav-item-label">{item.label}</span>{page === item.key && <span className="nav-active-dot" aria-hidden="true" />}</button>
