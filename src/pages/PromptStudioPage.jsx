@@ -1,7 +1,13 @@
-import { ArrowUp, MessageSquare, Plus, ShieldCheck, X } from 'lucide-react'
+import { MessageSquare, Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { executePromptWorkspaceRun, fetchPromptWorkspaceContext, fetchPromptWorkspaceRun, fetchConversations, fetchConversation } from '../services/promptWorkspace/promptWorkspaceService'
 import { isAdmin } from '../utils/permissions'
+import BrandMark from '../components/BrandMark'
+import { Button } from '../components/ui/button'
+import AssistantMarkdown from '../features/prompt-studio/AssistantMarkdown'
+import PolicyNotice from '../features/prompt-studio/PolicyNotice'
+import ChatHistory from '../features/prompt-studio/ChatHistory'
+import Composer from '../features/prompt-studio/Composer'
 import './workspace.css'
 
 const validationMessages = {
@@ -46,17 +52,17 @@ function Findings({ run }) {
 }
 
 function RunDetail({ run, currentUser }) {
-  if (!run) return <div className="studio-empty"><span className="studio-empty-icon" aria-hidden="true"><MessageSquare size={25} /></span>
+  if (!run) return <div className="studio-empty"><span className="studio-empty-icon" aria-hidden="true"><BrandMark size={26} /></span>
     <h2>What would you like to explore?</h2><p>Your prompt runs through your organization’s applicable policies before it reaches the model.</p></div>
   return <div className="studio-thread">
     <div className="studio-run-meta"><span className={'studio-status studio-status-' + runTone(run.status)}>{runLabel(run.status)}</span><span>{formatTime(run.created_at)}</span><span>{run.model}</span></div>
-    {run.prompt != null && <div className="studio-message studio-message-user"><span className="studio-message-label">Your prompt</span><p>{run.prompt}</p></div>}
+    {run.prompt != null && !run.content_expired && <div className="studio-message studio-message-user"><span className="studio-message-label">You</span><p>{run.prompt}</p></div>}
     {run.status === 'blocked_input' && <div className="studio-outcome studio-outcome-blocked" role="alert"><strong>Prompt blocked by policy</strong><p>Your prompt was not sent to the model. Review the matched checks and remove restricted content.</p></div>}
     {run.status === 'blocked_output' && <div className="studio-outcome studio-outcome-blocked" role="alert"><strong>Response withheld</strong><p>The model response failed a policy check, so its text is not shown.</p></div>}
     {run.status === 'validation_error' && <div className="studio-outcome studio-outcome-error" role="alert"><strong>Security check could not complete</strong><p>This is a checking error, not proof of a policy violation. Unchecked content was withheld.</p></div>}
     {run.error_code === 'policy_required' && <div className="studio-outcome studio-outcome-error" role="alert"><strong>Message not sent</strong><p>No input policy was available under the configuration used for this message. Check your current workspace settings before retrying.</p>{isAdmin(currentUser) ? <a href="#users">Review my policy groups ↗</a> : <p>Ask your administrator to assign your policy groups.</p>}</div>}
     {run.error_message && run.error_code !== 'policy_required' && <div className="studio-outcome studio-outcome-error" role="alert">{run.error_message}</div>}
-    {run.response_text != null && !run.response_withheld && <div className="studio-message studio-message-response"><span className="studio-message-label">Model response</span><p>{run.response_text}</p></div>}
+    {run.response_text != null && !run.response_withheld && !run.content_expired && <div className="studio-message studio-message-response"><div className="studio-response-head"><span className="studio-response-mark"><BrandMark size={16} /></span><strong>Averiq</strong><span>{run.model}</span></div><AssistantMarkdown text={run.response_text} withheld={run.response_withheld} expired={run.content_expired} /></div>}
     {run.content_expired && <p className="studio-muted">Stored text has expired; the decision record remains.</p>}
     {run.status === 'processing' && <div className="studio-thinking" role="status"><span className="studio-thinking-dot" />Checking policies and preparing your reply…</div>}
     {run.status !== 'processing' && <details className="studio-message-details" open={run.status === 'validation_error'}><summary>Security checks & usage <span className={'studio-status studio-status-' + runTone(run.status)}>{runLabel(run.status)}</span></summary><Findings run={run} />
@@ -147,16 +153,7 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
   }, [messages, pending, loadingChat])
 
   useEffect(() => {
-    if (!historyOpen) return
-    const returnFocus = document.activeElement
-    document.querySelector('.studio-history-close')?.focus()
-    function closeOnEscape(event) { if (event.key === 'Escape') setHistoryOpen(false) }
-    document.addEventListener('keydown', closeOnEscape)
-    return () => { document.removeEventListener('keydown', closeOnEscape); returnFocus?.focus?.() }
-  }, [historyOpen])
-
-  useEffect(() => {
-    const desktop = window.matchMedia('(min-width: 701px)')
+    const desktop = window.matchMedia('(min-width: 961px)')
     function closeDrawer(event) { if (event.matches) setHistoryOpen(false) }
     desktop.addEventListener('change', closeDrawer)
     return () => desktop.removeEventListener('change', closeDrawer)
@@ -315,55 +312,20 @@ export default function PromptStudioPage({ runId = '', conversationId = '', curr
   const turns = pending ? [...messages, pending] : messages
   function retryHistory() { setHistoryLoading(true); setHistoryReload((current) => current + 1) }
   return <div className="studio-page">
-    <div className={'studio-policy-banner ' + (context.enforcement_ready === false || policySetupRequired ? 'is-warning' : '')} role="status">
-      <span className="studio-policy-icon" aria-hidden="true"><ShieldCheck size={17} /></span>
-      <div><strong>{policySetupRequired ? 'Policy setup required' : context.enforcement_ready === false ? 'Policy checking needs attention' : optionalAdminPolicy ? 'Policies optional for admins' : policyOptionalWithoutInput ? 'No input policy assigned' : 'Organization policy checks'}</strong>
-        <p>{policySetupRequired ? 'Your account needs a group with an active input policy for this integration. Set up your policy groups before sending.' : context.enforcement_ready === false ? context.readiness_reason : optionalAdminPolicy ? 'You can send messages without a policy assignment. Policies assigned to your groups still apply.' : policyOptionalWithoutInput ? 'Your organization allows messages without an input policy. Assigned output policies still apply.' : 'Every message and its conversation context pass through applicable policies. Restricted replies are withheld.'}</p>
-        <small>Groups: {context.groups.length ? context.groups.map((group) => group.name).join(', ') : 'none assigned'}</small></div>
-      {isAdmin(currentUser) ? <a href={policySetupRequired || optionalAdminPolicy ? '#users' : '#inventory'}>{policySetupRequired ? 'Manage my groups' : optionalAdminPolicy ? 'My policy groups' : 'Manage groups'} <span aria-hidden="true">↗</span></a> : policySetupRequired && <p>Ask your administrator to assign your policy groups.</p>}
-    </div>
+    <PolicyNotice context={context} policySetupRequired={policySetupRequired} optionalAdminPolicy={optionalAdminPolicy} policyOptionalWithoutInput={policyOptionalWithoutInput} currentUser={currentUser} />
     <div className="studio-layout">
-      <aside className={'studio-history ' + (historyOpen ? 'is-open' : '')} aria-label="Chat history">
-        <div className="studio-history-head"><div><span className="studio-kicker">YOUR WORKSPACE</span><h2>Chats</h2></div>
-          <button type="button" className="studio-new-button" onClick={newChat} disabled={busy} aria-label="New chat" title="New chat"><Plus size={16} /></button><button type="button" className="studio-history-close" onClick={() => setHistoryOpen(false)} aria-label="Close chats"><X size={16} /></button></div>
-        <button type="button" className="studio-new-chat" disabled={busy} onClick={newChat}><Plus size={14} aria-hidden="true" /> New chat</button>
-        <div className="studio-history-list">
-          {historyLoading ? <p className="studio-history-empty" role="status">Loading your chats…</p> : null}
-          {historyError && <div className="studio-history-error" role="alert"><strong>{historyUnavailable ? 'Chat history unavailable' : 'Could not load chats'}</strong><p>{historyError}</p><button type="button" onClick={retryHistory} disabled={historyLoading}>{historyLoading ? 'Retrying…' : 'Retry loading chats'}</button></div>}
-          {!historyLoading && history.items.length ? history.items.map((item) =>
-            <button type="button" key={item.id} disabled={busy} onClick={() => show(item.id)} aria-current={chat?.id === item.id ? 'true' : undefined} className={'studio-history-item ' + (chat?.id === item.id ? 'is-active' : '')}>
-              <span className="studio-history-title">{item.title}</span>
-              <span className="studio-history-meta"><span className="studio-history-date">{formatTime(item.updated_at)}</span><span>{item.message_count} {item.message_count === 1 ? 'message' : 'messages'}</span></span>
-            </button>) : !historyLoading && !historyError ? <div className="studio-history-empty"><strong>A home for your conversations</strong><p>Send a message to save your first chat. Follow-ups stay in the same thread.</p></div> : null}
-        </div>
-        {history.total > history.page_size && <div className="studio-history-pager"><button type="button" disabled={page <= 1 || busy} onClick={() => setPage(page - 1)}>Previous</button><span>{page} / {Math.ceil(history.total / history.page_size)}</span><button type="button" disabled={page * history.page_size >= history.total || busy} onClick={() => setPage(page + 1)}>Next</button></div>}
-        <p className="studio-history-footnote">{historyUnavailable ? 'Chat support requires a server update.' : 'Saved to your workspace account.'}</p>
-      </aside>
+      <ChatHistory history={history} historyLoading={historyLoading} historyError={historyError} historyUnavailable={historyUnavailable} page={page} busy={busy} chat={chat} onNewChat={newChat} onSelect={show} onPageChange={setPage} onRetry={retryHistory} open={historyOpen} onOpenChange={setHistoryOpen} formatTime={formatTime} />
       <section className="studio-workspace" aria-label="Conversation" inert={historyOpen ? true : undefined}>
-        <header className="studio-workspace-head"><div><span className="studio-kicker">PROMPT STUDIO</span><h2>{chat?.title || (loadingChat ? 'Opening chat…' : 'New chat')}</h2></div>
-          <div className="studio-header-actions"><button type="button" className="studio-history-toggle" aria-expanded={historyOpen} onClick={() => setHistoryOpen(!historyOpen)}>Chats</button><button type="button" className="studio-header-new" onClick={newChat} disabled={busy}><Plus size={13} />New chat</button></div></header>
-        <div className="studio-workspace-body" ref={bodyRef} aria-busy={loadingChat}>
+        <header className="studio-workspace-head"><div><h2>{chat?.title || (loadingChat ? 'Opening chat…' : 'New chat')}</h2></div>
+          <div className="studio-header-actions"><Button type="button" variant="outline" className="studio-history-toggle" aria-label="Chats" aria-expanded={historyOpen} onClick={() => setHistoryOpen(!historyOpen)}><MessageSquare size={17} aria-hidden="true" /></Button><Button type="button" variant="outline" className="studio-header-new" onClick={newChat} disabled={busy} aria-label="New chat"><Plus size={17} aria-hidden="true" /></Button></div>
+        </header>
+        <div className="studio-workspace-body" ref={bodyRef} aria-busy={loadingChat} role="region" aria-label="Conversation messages" tabIndex={0}>
           {loadingChat ? <div className="studio-thread-loading" role="status"><span /><span /><span /><p>Opening your conversation…</p></div> : turns.length ? <div className="studio-conversation-thread">
             {messages.length < messageTotal && <button type="button" className="studio-load-older" disabled={loadingOlder || busy} onClick={loadOlder}>{loadingOlder ? 'Loading…' : 'Load earlier messages'}</button>}
             {turns.map((run) => <article className="studio-turn" key={run.id} aria-label={`Message sent ${formatTime(run.created_at)}`}><RunDetail run={run} currentUser={currentUser} /></article>)}
           </div> : <RunDetail run={null} />}
         </div>
-        <form className="studio-composer" onSubmit={submit}>
-          {error && <p className="studio-form-error" role="alert">{error}</p>}
-          {(!historyReady || historyUnavailable) && !historyLoading && <div className="studio-history-notice" role="status"><span>Sending is paused until chat history is available.</span><button type="button" onClick={retryHistory}>Retry</button></div>}
-          <label className="studio-prompt-label" htmlFor="studio-prompt">{chat ? 'Continue the conversation' : 'Start a conversation'}</label>
-          <textarea id="studio-prompt" ref={promptRef} required disabled={busy || loadingChat} maxLength="24000" rows="3" placeholder={chat ? 'Ask a follow-up…' : 'Message Averiq…'} value={form.prompt} onKeyDown={onComposerKeyDown} onChange={(event) => setForm({ ...form, prompt: event.target.value })} />
-          <div className="studio-composer-controls">
-            <label>Integration<select required disabled={busy || loadingChat} value={form.integration_id} onChange={(event) => {
-              const integration = context.integrations.find((item) => item.id === event.target.value)
-              setForm({ ...form, integration_id: event.target.value, model: integration?.models?.[0] || '' })
-            }}><option value="">Select integration</option>{context.integrations.map((item) => <option key={item.id} value={item.id}>{item.account_name} · {item.provider}</option>)}</select></label>
-            <label>Model<select required disabled={busy || loadingChat} value={form.model} onChange={(event) => setForm({ ...form, model: event.target.value })}><option value="">Select model</option>{selected?.models.map((model) => <option key={model}>{model}</option>)}</select></label>
-            <details className="studio-options"><summary>Options</summary><div><label>Temperature<input disabled={busy} type="number" min="0" max="2" step="0.1" value={form.temperature} onChange={(event) => setForm({ ...form, temperature: Number(event.target.value) })} /></label><label>Max tokens<input disabled={busy} type="number" min="1" max="8192" value={form.max_tokens} onChange={(event) => setForm({ ...form, max_tokens: Number(event.target.value) })} /></label></div></details>
-            <button type="submit" className="studio-send" disabled={busy || loadingChat || !historyReady || historyUnavailable || policySetupRequired || !form.integration_id || !form.model || !form.prompt.trim()} aria-label={busy ? 'Waiting for reply' : 'Send message'}>{busy ? 'Thinking…' : 'Send'} <ArrowUp size={14} aria-hidden="true" /></button>
-          </div>
-          <div className="studio-composer-note"><span title={contextNote}>Recent allowed messages provide context.</span><span className="studio-keyboard-hint">Enter to send · Shift + Enter for a new line</span></div>
-        </form>
+        <Composer form={form} setForm={setForm} onSubmit={submit} onKeyDown={onComposerKeyDown} promptRef={promptRef} selected={selected} integrations={context.integrations} busy={busy} loadingChat={loadingChat} historyReady={historyReady} historyUnavailable={historyUnavailable} historyLoading={historyLoading} policySetupRequired={policySetupRequired} error={error} onRetryHistory={retryHistory} chat={chat} contextNote={contextNote} />
       </section>
     </div>
   </div>

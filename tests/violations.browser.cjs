@@ -9,9 +9,9 @@ let browser
   browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome', headless: true, args: ['--no-sandbox'] })
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } }), page = await context.newPage()
   page.setDefaultTimeout(15000)
-  const rows = Array.from({ length: 12 }, (_, i) => ({ id: id(i + 1), policy_name: `Data policy ${i + 1}`, category: 'dlp', severity: 'high', action: 'BLOCK', stage: 'input', resolution_status: 'open', resolution_note: '', policy_version: 2, version: 1, run_id: id(90 + i), created_at: '2026-10-20T09:30:00Z', findings: [{ type: 'email', field: 'prompt', outcome: 'fail' }] }))
+  const rows = Array.from({ length: 12 }, (_, i) => ({ id: id(i + 1), policy_name: `Data policy ${i + 1}`, category: 'dlp', severity: 'high', action: 'BLOCK', stage: 'input', resolution_status: 'open', resolution_note: '', policy_version: 2, version: 1, run_id: id(90 + i), created_at: '2026-10-20T09:30:00Z', findings: [{ rule_id: 'catalog-rule', type: 'catalog', field: 'user_prompt', outcome: 'match', evidence: [{ kind: 'dlp_pattern', entry_id: 'email-check', entry_name: 'Email addresses' }] }] }))
   const errors = [], unexpected = [], updates = [], accessibility = []
-  let role = 'org_admin', failDetail = false, slowDetail = false, failSave = '', unchangedSave = false, failListOnce = false
+  let role = 'org_admin', failDetail = false, slowDetail = false, failSave = '', unchangedSave = false, failListOnce = false, failRun = false
   page.on('pageerror', error => errors.push(error.message))
   await page.addInitScript(() => localStorage.setItem('centurion.auth.token', 'synthetic-only'))
   await page.route(`${base}/api/**`, async route => {
@@ -21,11 +21,17 @@ let browser
     if (p === '/api/notifications') return send({ items: [] })
     if (p === '/api/violations' && failListOnce) { failListOnce = false; return send({ detail: { message: 'List refresh unavailable' } }, 503) }
     if (p === '/api/violations') return send({ items: rows, total: rows.length, page: 1, page_size: 20 })
+    if (p.startsWith('/api/prompt-workspace/runs/') && method === 'GET') {
+      const incident = rows.find(item => p.endsWith(item.run_id))
+      assert.ok(incident)
+      if (failRun) return send({ detail: { message: 'Run not found' } }, 404)
+      return send({ run: { id: incident.run_id, status: incident.id === id(3) ? 'blocked_output' : 'blocked_input', prompt: incident.id === id(2) ? 'EXPIRED_PROMPT_MUST_NOT_RENDER' : 'Summarize this message: contact alice@example.test. <script>window.injectedFromPrompt = true</script>', content_expired: incident.id === id(2), response_withheld: incident.id === id(3), response_text: 'WITHHELD_RESPONSE_MUST_NOT_RENDER', model: 'gpt-4.1-mini', user_name: 'Ada Morgan', created_at: incident.created_at, input_evaluation: { rule_results: [{ rule_id: 'catalog-rule', type: 'catalog', field: 'user_prompt', outcome: 'match', policy_name: incident.policy_name, policy_version: 2, evidence: [{ entry_id: 'email-check', entry_name: 'Email addresses' }] }, { rule_id: 'unrelated', type: 'catalog', field: 'user_prompt', outcome: 'match', policy_name: 'Another policy', policy_version: 2, evidence: [{ entry_id: 'unrelated-check', entry_name: 'UNRELATED_POLICY_MUST_NOT_RENDER' }] }] } } })
+    }
     const row = rows.find(item => p === `/api/violations/${item.id}` || p === `/api/violations/${item.id}/resolution`)
     if (row && method === 'GET') {
       if (slowDetail) await new Promise(resolve => setTimeout(resolve, 700))
       if (failDetail) return send({ detail: { message: 'Unable to load this incident' } }, 503)
-      return send({ violation: { ...row, findings: role === 'user' ? [{ type: 'email', outcome: 'fail' }] : row.findings } })
+      return send({ violation: { ...row, findings: role === 'user' ? [{ type: 'catalog', outcome: 'match' }] : row.findings } })
     }
     if (row && method === 'PATCH') {
       assert.equal(role, 'org_admin'); const body = req.postDataJSON()
@@ -44,6 +50,12 @@ let browser
   const audit = async name => { const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze(); result.violations.forEach(item => accessibility.push({ name, id: item.id, nodes: item.nodes.map(n => n.target) })) }
   await page.goto(`${base}/#violations`)
   await open(12); await ready(12)
+  await dialog().getByRole('heading', { name: 'Submitted prompt', exact: true }).waitFor()
+  await dialog().locator('.violation-prompt-text').waitFor()
+  assert.equal((await dialog().locator('.violation-prompt-text').innerText()).includes('alice@example.test'), true)
+  await dialog().getByText('Email addresses', { exact: true }).waitFor()
+  assert.equal(await page.evaluate(() => window.injectedFromPrompt), undefined)
+  assert.equal((await dialog().innerText()).includes('UNRELATED_POLICY_MUST_NOT_RENDER'), false)
   const box = await dialog().boundingBox(); assert.equal(box.y >= 0 && box.y + box.height <= 900, true)
   await dialog().getByLabel('Review note').fill('Reviewed by the security team.')
   await dialog().getByRole('button', { name: 'Mark reviewed', exact: true }).click()
@@ -70,6 +82,8 @@ let browser
   await page.keyboard.press('Escape'); slowDetail = false
   await open(2); await ready(2); await page.waitForTimeout(850)
   assert.equal(await dialog().getByRole('heading', { name: 'Data policy 1', exact: true }).count(), 0, 'Stale detail must not replace a later selection')
+  await dialog().getByText(/The prompt text has expired under/).waitFor()
+  assert.equal((await dialog().innerText()).includes('EXPIRED_PROMPT_MUST_NOT_RENDER'), false)
   await page.keyboard.press('Escape')
   for (const width of [768, 390]) {
     await page.setViewportSize({ width, height: 850 }); await open(12); await ready(12)
@@ -79,6 +93,8 @@ let browser
     await page.keyboard.press('Escape')
   }
   await page.setViewportSize({ width: 1440, height: 900 }); await open(3); await ready(3)
+  await dialog().getByText('The block applies to the model response. Its withheld text is not displayed.', { exact: true }).waitFor()
+  assert.equal((await dialog().innerText()).includes('WITHHELD_RESPONSE_MUST_NOT_RENDER'), false)
   failSave = 'error'; await dialog().getByRole('button', { name: 'Resolve', exact: true }).click()
   await dialog().getByRole('alert').filter({ hasText: 'Could not save this incident' }).waitFor()
   assert.equal(await dialog().isVisible(), true); assert.equal(updates.length, 2)
@@ -101,11 +117,15 @@ let browser
   assert.equal(updates.length, 3)
   await page.getByRole('button', { name: 'Reload list', exact: true }).click()
   await page.getByRole('alert').waitFor({ state: 'hidden' })
+  failRun = true; await open(4); await ready(4)
+  await dialog().getByRole('alert').filter({ hasText: 'The linked run is unavailable to your account.' }).waitFor()
+  failRun = false; await dialog().getByRole('button', { name: 'Retry prompt', exact: true }).click()
+  await dialog().locator('.violation-prompt-text').waitFor(); await page.keyboard.press('Escape')
   role = 'user'; await page.goto(`${base}/#violations`); await page.reload(); await open(1); await ready(1)
   assert.equal(await dialog().getByRole('button', { name: /Mark reviewed|Resolve/ }).count(), 0)
   assert.equal(await dialog().innerText().then(text => text.includes('undefined')), false)
   assert.equal(updates.length, 3); await audit('user/read-only')
   assert.deepEqual(errors, []); assert.deepEqual(unexpected, []); assert.deepEqual(accessibility, [])
-  console.log('PASS: Open immediately displays visible incident dialog; confirmed saves close dialog and show feedback; already-saved actions disabled; admin review/resolve payloads; save failure/stale reload/unchanged response/list refresh recovery; safe evidence/run link; errors/retry; stale response isolation; focus return; user read-only permissions; desktop/tablet/mobile; zero axe or console errors.')
+  console.log('PASS: Open immediately displays visible incident dialog; confirmed saves close dialog and show feedback; already-saved actions disabled; admin review/resolve payloads; save failure/stale reload/unchanged response/list refresh recovery; authorized prompt and recorded reasons; expired text/withheld response never rendered; unrelated policy excluded; inaccessible run/retry; escaped prompt text; safe evidence/run link; errors/retry; stale response isolation; focus return; user read-only permissions; desktop/tablet/mobile; zero axe or console errors.')
   await browser.close()
 })().catch(async error => { console.error(error); if (browser) await browser.close(); process.exitCode = 1 })
