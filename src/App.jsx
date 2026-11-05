@@ -44,7 +44,7 @@ export default function App() {
   const openCreateIntegration = hashState.params.get('modal') === 'add'
   const filterGroupId = hashState.params.get('group_id') || ''
   const filterIntegrationId = hashState.params.get('integration_id') || ''
-  const page = isValidPage(route) && canOpenPage(user, route) ? route : isAdmin(user) ? 'insights' : 'prompt-studio'
+  const page = isValidPage(route) && canOpenPage(user, route) ? route : isAdmin(user) ? 'insights' : 'my-activity'
   const ActivePage = pageRegistry[page] || pageRegistry['prompt-studio']
   const isStandalonePage =
     page !== 'insights'
@@ -114,7 +114,7 @@ export default function App() {
     setUser(nextUser)
     setPendingVerificationState(null)
     setVerificationState({ email: '', message: '' })
-    window.location.hash = isAdmin(nextUser) ? 'insights' : 'prompt-studio'
+    window.location.hash = isAdmin(nextUser) ? 'insights' : 'my-activity'
     setHashState(getHashState())
   }
 

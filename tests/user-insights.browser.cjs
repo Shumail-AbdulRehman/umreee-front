@@ -45,6 +45,7 @@ let browser
    if(p.endsWith('/models')) return send({items:total?[{provider:'openai',model:'gpt-4.1-mini',runs:total,known_tokens:total*130,estimated_cost_usd:'0.024',unknown_usage_runs:1,unknown_cost_runs:1}]:[]})
   }
   if(p==='/api/prompt-workspace/context') return send({integrations:[],groups:[],input_policy_coverage:{},require_active_policy:false,enforcement_ready:true})
+  if(p==='/api/prompt-workspace/runs') return send({items:[],total:0,page:1,page_size:5})
   if(p==='/api/prompt-workspace/conversations') return send({items:[],total:0,page:1,page_size:20})
   unexpected.push(p);return route.abort()
  })
@@ -106,7 +107,7 @@ let browser
   await page.screenshot({path:`/tmp/sentinel-user-insights-${width}.png`,fullPage:true})
  }
  role='user';await page.reload()
- await page.getByRole('heading',{name:'Prompt Studio',exact:true}).waitFor()
+ await page.getByRole('heading',{name:'My activity',exact:true}).waitFor()
  assert.equal(await page.getByRole('button',{name:'User insights',exact:true}).count(),0)
  fs.writeFileSync('/tmp/sentinel-user-insights-a11y.json',JSON.stringify(accessibility,null,2))
  assert.deepEqual(errors,[]);assert.deepEqual(unexpected,[]);assert.deepEqual(accessibility,[])

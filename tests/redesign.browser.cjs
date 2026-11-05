@@ -117,7 +117,7 @@ let activeBrowser
  mode='error';await page.goto(`${base}/#insights`);await page.getByRole('alert').waitFor();await audit('overview/error')
  mode='populated';role='user';await page.reload();await settled()
  for(const route of ['prompt-studio','activity-log','violations','catalog','latency','spend']){await page.goto(`${base}/#${route}`);await settled();assert.equal(await page.locator('.side').getByText('Manage',{exact:true}).count(),0)}
- await page.goto(`${base}/#users`);await settled();assert.equal(await page.getByRole('heading',{name:'Prompt Studio',exact:true}).count()>0,true)
+ await page.goto(`${base}/#users`);await settled();assert.equal(await page.getByRole('heading',{name:'My activity',exact:true}).count()>0,true)
  role='super_admin';await page.reload();await settled();await page.goto(`${base}/#settings`);await settled();await page.getByRole('heading',{name:'Platform organizations'}).waitFor();await audit('settings/superadmin')
  const authContext=await browser.newContext(); const auth=await authContext.newPage();auth.on('pageerror',e=>errors.push(e.message))
  await auth.route(`${base}/api/**`,route=>route.fulfill({json:{company_name:'Northstar Labs',role:'user',email:'invite@example.test'}}))
