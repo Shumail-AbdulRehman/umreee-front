@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { InlineLoadingBar } from '../components/LoadingSurface'
 import { formatDate, formatNumber, formatPercent } from '../lib/format'
 import { fetchLLMIntegrations } from '../services/integrations/llmIntegrationService'
 import { fetchManagedUsers } from '../services/users/userManagementService'
@@ -180,11 +181,11 @@ function Workspace({ testId, fresh, capabilities, integrations, users, launchKey
               <div className="rt-page-breakdown"><PluginTable plugins={report.plugins} paired={report.paired} /><StrategyBreakdown strategies={report.strategies} /></div>
               <ComplianceTabs compliance={compliance} provisional={report.provisional} />
               {!test.judge && report.decided?.inconclusive > 0 && <NoJudgeNote undecided={report.decided.inconclusive} onClone={() => clone(test.mode)} />}
-            </> : <p role="status">Loading report…</p> : <LegacyReport test={test} />}
-            <ResultsTable {...results} items={results.items.map((row) => ({ ...row, plugin_name: row.plugin_name || row.category,
+            </> : <InlineLoadingBar label="Loading report…" /> : <LegacyReport test={test} />}
+            {(report || error) && <ResultsTable {...results} items={results.items.map((row) => ({ ...row, plugin_name: row.plugin_name || row.category,
               strategy_name: row.strategy_name || 'Plain' }))} filters={filters} plugins={capabilities?.plugins}
               strategies={capabilities?.strategies} page={resultPage} pageSize={results.page_size}
-              onFilterChange={(next) => { setFilters(next); setResultPage(1) }} onPageChange={setResultPage} onView={openResult} />
+              onFilterChange={(next) => { setFilters(next); setResultPage(1) }} onPageChange={setResultPage} onView={openResult} />}
             {!v3 && comparable.length > 0 && <section className="rt-panel rt-panel-body"><h2>Paired comparison</h2>
               {comparable.map((other) => <Button key={other.id} variant="outline" onClick={() => run(async () => setComparison(await api.compareRedTeamTests(
                 test.mode === 'raw' ? test.id : other.id, test.mode === 'protected' ? test.id : other.id)))}>Compare with {other.name}</Button>)}
