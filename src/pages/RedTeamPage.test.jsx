@@ -53,6 +53,20 @@ describe('Red Team composition', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'New test' })[0])
     expect(await screen.findByLabelText('Test name')).toBeTruthy()
   })
+  it('displays each readiness check from the capabilities response independently', async () => {
+    api.redTeamCapabilities.mockResolvedValueOnce({
+      promptfoo: { version: '0.126.0', available: true, cloud_key_configured: true },
+      broker_transport_reachable: false, worker_observed: true, dispatcher_observed: false,
+    })
+    at('#red-team')
+    const banner = within(await screen.findByRole('region', { name: 'Execution readiness' }))
+    expect(banner.getByRole('status').textContent).toBe('Launch unavailable')
+    expect(banner.getByText('promptfoo 0.126.0')).toBeTruthy()
+    expect(banner.getByText('promptfoo Cloud key configured')).toBeTruthy()
+    expect(banner.getByText('Worker active')).toBeTruthy()
+    expect(banner.getByText('Broker connection unavailable')).toBeTruthy()
+    expect(banner.getByText('Dispatcher not responding')).toBeTruthy()
+  })
   it('routes directly to a new editor', async () => {
     at('#red-team?new=1')
     expect(await screen.findByRole('heading', { name: 'New Red Team test' })).toBeTruthy()

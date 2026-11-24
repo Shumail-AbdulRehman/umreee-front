@@ -30,9 +30,10 @@ function readiness(caps, now) {
   if (!caps) return undefined
   const stamp = caps.observed_at?.worker || caps.worker_observed_at || caps.worker_last_seen_at
   return {
-    state: caps.worker_observed && caps.dispatcher_observed && caps.broker_transport_reachable ? 'ready' : 'waiting',
-    queueConnected: Boolean(caps.broker_transport_reachable),
-    requestsPerMinute: caps.requests_per_minute,
+    promptfoo: caps.promptfoo,
+    broker_transport_reachable: caps.broker_transport_reachable,
+    worker_observed: caps.worker_observed,
+    dispatcher_observed: caps.dispatcher_observed,
     lastSeenSeconds: stamp ? Math.max(0, Math.round((now - Date.parse(stamp)) / 1000)) : undefined,
   }
 }
