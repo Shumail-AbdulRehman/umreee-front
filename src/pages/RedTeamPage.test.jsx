@@ -63,6 +63,18 @@ describe('Red Team composition', () => {
     expect(api.getRedTeamReport).not.toHaveBeenCalled()
     expect(api.listRedTeamResults).not.toHaveBeenCalled()
   })
+  it('shows the API field error for a rejected preview and save', async () => {
+    const error = Object.assign(new Error('Check the submitted fields'), {
+      fieldErrors: { 'grader.model': ['Choose a supported grader model.'] },
+    })
+    api.getRedTeamTestConfigPreview.mockRejectedValueOnce(error)
+    api.updateRedTeamTest.mockRejectedValueOnce(error)
+    at('#red-team?test=a')
+    expect(await screen.findByText('Could not build the config preview. Check the submitted fields Choose a supported grader model.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Save draft' }))
+    expect(await screen.findByText('Check the submitted fields Choose a supported grader model.', { exact: true })).toBeTruthy()
+    expect(api.launchRedTeamTest).not.toHaveBeenCalled()
+  })
   it('shows progress for a running test', async () => {
     api.getRedTeamTest.mockResolvedValue({ test: { ...draft, status: 'running' } })
     at('#red-team?test=a')
@@ -171,7 +183,7 @@ describe('Red Team composition', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Save draft' }))
     expect(await screen.findByText('Choose a supported plugin')).toBeTruthy()
     expect(screen.getByLabelText('Test name').value).toBe(draft.name)
-    expect(screen.getAllByText('Invalid test')).toHaveLength(1)
+    expect(screen.getAllByText('Invalid test Choose a supported plugin')).toHaveLength(1)
   })
   it('maps verdict and source filters to API fields', async () => {
     api.getRedTeamTest.mockResolvedValue({ test: { ...draft, status: 'completed' } })
