@@ -1,0 +1,224 @@
+{
+  "plugins": [
+    {
+      "id": "prompt-extraction",
+      "name": "System Prompt Disclosure",
+      "description": "Tests for system prompt disclosure vulnerabilities",
+      "group": "Security & access",
+      "severity": "medium",
+      "remote_only": false
+    },
+    {
+      "id": "sql-injection",
+      "name": "SQL Injection",
+      "description": "Tests for SQL injection vulnerabilities",
+      "group": "Security & access",
+      "severity": "high",
+      "remote_only": false
+    },
+    {
+      "id": "pii:direct",
+      "name": "PII via Direct Exposure",
+      "description": "Tests for direct PII exposure vulnerabilities",
+      "group": "Data & privacy",
+      "severity": "high",
+      "remote_only": false
+    }
+  ],
+  "strategies": [
+    {
+      "id": "basic",
+      "name": "Baseline Testing",
+      "description": "Original plugin tests without any additional strategies or optimizations",
+      "remote_only": false,
+      "multi_turn": false,
+      "cases_per_seed": 1,
+      "target_calls_per_test": 1
+    },
+    {
+      "id": "base64",
+      "name": "Base64 Payload Encoding",
+      "description": "Tests handling of Base64-encoded malicious payloads",
+      "remote_only": false,
+      "multi_turn": false,
+      "cases_per_seed": 1,
+      "target_calls_per_test": 1
+    },
+    {
+      "id": "hex",
+      "name": "Hex Encoding",
+      "description": "Tests handling of hex-encoded malicious payloads",
+      "remote_only": false,
+      "multi_turn": false,
+      "cases_per_seed": 1,
+      "target_calls_per_test": 1
+    }
+  ],
+  "frameworks": [
+    {
+      "id": "nist_ai_rmf",
+      "name": "NIST AI RMF",
+      "description": "NIST AI Risk Management Framework for responsible AI development",
+      "controls": [
+        {
+          "id": "nist:ai:measure:1.1",
+          "name": "Measure 1.1 AI Risk Identification",
+          "plugins": []
+        },
+        {
+          "id": "nist:ai:measure:1.2",
+          "name": "Measure 1.2: Interdisciplinary Risk Assessment",
+          "plugins": []
+        }
+      ]
+    },
+    {
+      "id": "eu:ai-act",
+      "name": "EU AI Act",
+      "description": "EU AI Act for responsible AI development",
+      "controls": [
+        {
+          "id": "eu:ai-act:art5:subliminal-manipulation",
+          "name": "Art. 5: Subliminal Manipulation",
+          "plugins": []
+        },
+        {
+          "id": "eu:ai-act:art5:exploitation-of-vulnerabilities",
+          "name": "Art. 5: Exploitation of Vulnerabilities",
+          "plugins": []
+        }
+      ]
+    },
+    {
+      "id": "owasp:llm",
+      "name": "OWASP LLM Top 10",
+      "description": "OWASP LLM Top 10 security vulnerabilities for large language models",
+      "controls": [
+        {
+          "id": "owasp:llm:01",
+          "name": "LLM01: Prompt Injection",
+          "plugins": [
+            "prompt-extraction"
+          ]
+        },
+        {
+          "id": "owasp:llm:02",
+          "name": "LLM02: Sensitive Information Disclosure",
+          "plugins": [
+            "pii:direct",
+            "prompt-extraction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owasp:api",
+      "name": "OWASP API Top 10",
+      "description": "OWASP API Top 10 security risks for application programming interfaces",
+      "controls": [
+        {
+          "id": "owasp:api:01",
+          "name": "API-1: Broken Object Level Authorization",
+          "plugins": []
+        },
+        {
+          "id": "owasp:api:02",
+          "name": "API-2: Broken Authentication",
+          "plugins": []
+        }
+      ]
+    },
+    {
+      "id": "mitre:atlas",
+      "name": "MITRE ATLAS",
+      "description": "MITRE ATLAS framework for adversarial threat landscape for AI systems",
+      "controls": [
+        {
+          "id": "mitre:atlas:exfiltration",
+          "name": "Exfiltration",
+          "plugins": [
+            "pii:direct",
+            "prompt-extraction"
+          ]
+        },
+        {
+          "id": "mitre:atlas:impact",
+          "name": "Impact",
+          "plugins": []
+        }
+      ]
+    },
+    {
+      "id": "owasp:agentic",
+      "name": "OWASP Agentic AI",
+      "description": "API security vulnerabilities",
+      "controls": [
+        {
+          "id": "owasp:agentic:asi01",
+          "name": "ASI01: Agent Goal Hijack",
+          "plugins": []
+        },
+        {
+          "id": "owasp:agentic:asi02",
+          "name": "ASI02: Tool Misuse and Exploitation",
+          "plugins": []
+        }
+      ]
+    },
+    {
+      "id": "iso:42001",
+      "name": "ISO/IEC 42001",
+      "description": "AI management framework covering accountability, fairness, privacy, robustness, security, safety, and transparency.",
+      "controls": [
+        {
+          "id": "iso:42001:accountability",
+          "name": "Accountability",
+          "plugins": []
+        },
+        {
+          "id": "iso:42001:fairness",
+          "name": "Fairness & Bias",
+          "plugins": []
+        }
+      ]
+    },
+    {
+      "id": "gdpr",
+      "name": "EU GDPR",
+      "description": "GDPR key articles mapped to AI/LLM plugin tests with severities.",
+      "controls": [
+        {
+          "id": "gdpr:art5",
+          "name": "Art. 5: Principles relating to processing of personal data",
+          "plugins": [
+            "pii:direct"
+          ]
+        },
+        {
+          "id": "gdpr:art9",
+          "name": "Art. 5: Processing of special categories of personal data",
+          "plugins": [
+            "pii:direct"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dod:ai:ethics",
+      "name": "DoD AI Ethical Principles",
+      "description": "U.S. Department of Defense (DoD) AI ethical principles",
+      "controls": [
+        {
+          "id": "dod:ai:ethics:01",
+          "name": "Responsible: personnel exercise judgment and remain accountable for AI outcomes",
+          "plugins": []
+        },
+        {
+          "id": "dod:ai:ethics:02",
+          "name": "Equitable: AI behavior should minimize unintended bias and discriminatory outcomes.",
+          "plugins": []
+        }
+      ]
+    }
+  ]
+}
